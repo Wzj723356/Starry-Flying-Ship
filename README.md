@@ -12,10 +12,10 @@
 
 | 特性 | 描述 |
 |------|------|
-| **RTX光线追踪** | 完整支持NVIDIA RTX 40/50系列，包括全局光照、实时反射、柔和阴影 |
+| **多平台渲染** | 全面支持NVIDIA RTX、AMD Radeon、Intel核显/MX系列 |
 | **高级飞行物理** | 基于《战争雷霆》的六自由度飞行系统，支持大气层/太空切换 |
 | **星际环境** | 程序化生成的星球、三角形山脉地形、动态星空场 |
-| **AAA级画质** | 支持DLSS 3.0、HDR、8K分辨率 |
+| **性能优化** | 支持FSR/XeSS/DLSS超级分辨率，适配低配置设备 |
 
 ---
 
@@ -46,11 +46,11 @@
 
 ### 渲染
 - **引擎**: Unity 3D
-- **渲染管线**: HDRP (High Definition Render Pipeline)
-- **API**: DirectX 12
-- **光线追踪**: NVIDIA RTX (实时光线追踪)
-- **超级分辨率**: DLSS 3.0+
-- **最大分辨率**: 8K UHD
+- **渲染管线**: URP (Universal Render Pipeline)
+- **API**: DirectX 11/12, Vulkan, OpenGL
+- **光线追踪**: NVIDIA RTX (可选，默认关闭)
+- **超级分辨率**: DLSS 3.0+ / AMD FSR 3 / Intel XeSS
+- **最大分辨率**: 4K UHD (低配模式支持1080p)
 
 ### 物理
 - **物理引擎**: Unity Physics
@@ -61,9 +61,18 @@
 
 | 配置 | 最低 | 推荐 | 最佳 |
 |------|------|------|------|
-| **显卡** | RTX 3060 Ti | RTX 4080 | RTX 4090/50系列 |
-| **内存** | 12 GB | 32 GB | 64 GB |
-| **存储** | 50 GB | 100 GB SSD | 100 GB NVMe |
+| **显卡** | NVIDIA MX450 / Intel UHD 620 / AMD Radeon 530 | GTX 1060 / RX 580 | RTX 4070 / RX 7800 XT |
+| **内存** | 8 GB | 16 GB | 32 GB |
+| **处理器** | Intel i3-8100 / AMD Ryzen 3 2200G | Intel i5-10400 / AMD Ryzen 5 5600 | Intel i7-13700K / AMD Ryzen 7 7800X3D |
+| **存储** | 30 GB HDD | 50 GB SSD | 100 GB NVMe |
+
+### 兼容显卡列表
+
+| 厂商 | 支持型号 |
+|------|----------|
+| **NVIDIA** | MX450, GTX 1050+, RTX 2000/3000/4000/5000系列 |
+| **AMD** | Radeon 530+, RX 500/5000/6000/7000系列 |
+| **Intel** | UHD 620+, Iris Plus, Arc A380/A750/A770 |
 
 ---
 
