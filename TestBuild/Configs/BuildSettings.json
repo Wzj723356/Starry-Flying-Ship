@@ -1,0 +1,103 @@
+{
+  "BuildConfiguration": {
+    "GameTitle": "星际战舰 - Starry Flying Ship",
+    "Version": "1.0.0-alpha",
+    "BuildType": "Development",
+    "Platform": "Windows",
+    "Architecture": "x64",
+    "TargetFramework": "netstandard2.1",
+    "UnityVersion": "2022.3.23f1",
+    
+    "Graphics": {
+      "API": "DirectX12",
+      "RayTracing": "Enabled",
+      "RTXDLSS": "Auto",
+      "VariableRateShading": "Disabled",
+      "AntiAliasing": "SMAA",
+      "ShadowQuality": "Ultra",
+      "TextureQuality": "Ultra",
+      "PostProcessing": "Enabled",
+      "Bloom": "Enabled",
+      "AmbientOcclusion": "Enabled",
+      "ScreenSpaceReflection": "Enabled",
+      "DepthOfField": "Enabled",
+      "MotionBlur": "Enabled"
+    },
+    
+    "Performance": {
+      "TargetFrameRate": 60,
+      "MaxFrameRate": 144,
+      "VSync": "Enabled",
+      "AdaptivePerformance": "Enabled",
+      "OcclusionCulling": "Enabled",
+      "StaticBatching": "Enabled",
+      "DynamicBatching": "Enabled",
+      "GPUSkinning": "Enabled"
+    },
+    
+    "Audio": {
+      "AudioDSPBufferSize": 1024,
+      "SampleRate": 48000,
+      "SpeakerMode": "Stereo",
+      "SurroundSound": "Enabled",
+      "HRTF": "Enabled",
+      "AudioQuality": "High"
+    },
+    
+    "Network": {
+      "Protocol": "UDP",
+      "TickRate": 64,
+      "SnapshotRate": 32,
+      "Compression": "Enabled",
+      "Encryption": "Enabled",
+      "MaxPlayers": 8,
+      "ServerRegion": "Auto"
+    },
+    
+    "Physics": {
+      "Gravity": "-9.81",
+      "FixedTimestep": "0.011111",
+      "MaxTimestep": "0.1",
+      "InterCollision": "Enabled",
+      "AutoSimulation": "Enabled"
+    },
+    
+    "Input": {
+      "MouseSensitivity": 1.0,
+      "InvertY": false,
+      "InvertX": false,
+      "ControlScheme": "MouseKeyboard",
+      "ControllerSupport": "Enabled",
+      "VRSupport": "Disabled"
+    },
+    
+    "Gameplay": {
+      "GameMode": "SpaceCombat",
+      "ScoreToWin": 500,
+      "RespawnDelay": 5,
+      "FriendlyFire": false,
+      "AutoBalance": true,
+      "KillCam": true,
+      "FriendlyFireDamageMultiplier": 0.5
+    },
+    
+    "Testing": {
+      "EnableTestMode": true,
+      "EnableDebugConsole": true,
+      "EnableDeveloperMode": true,
+      "EnableCheats": false,
+      "ShowFPS": true,
+      "ShowStats": true,
+      "LogLevel": "Info"
+    },
+    
+    "Paths": {
+      "GameDataPath": "./GameData",
+      "ConfigPath": "./Configs",
+      "SavePath": "./Saves",
+      "LogPath": "./Logs",
+      "ModPath": "./Mods",
+      "ScreenshotPath": "./Screenshots"
+    }
+  }
+}

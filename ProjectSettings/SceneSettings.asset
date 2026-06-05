@@ -1,0 +1,145 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+SceneSettings:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 2
+  m_EditorClassIdentifier: ""
+  m_RenderingPath: 3
+  m_AmbientMode: 3
+  m_AmbientSkyColor: {r: 0.3, g: 0.4, b: 0.6, a: 1}
+  m_AmbientEquatorColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  m_AmbientGroundColor: {r: 0.2, g: 0.2, b: 0.2, a: 1}
+  m_AmbientIntensity: 1
+  m_Fog: 1
+  m_FogMode: 1
+  m_FogColor: {r: 0.5, g: 0.6, b: 0.8, a: 1}
+  m_FogDensity: 0.001
+  m_FogStart: 0
+  m_FogEnd: 10000
+  m_HaloStrength: 0.5
+  m_FlareStrength: 1
+  m_FlareFadeSpeed: 3
+  m_SpotCookieSize: 1024
+  m_OcclusionMaskSize: 256
+  m_OcclusionCulling: 0
+  m_ShadowmaskMode: 0
+  m_ReflectionIntensity: 1
+  m_ReflectionBounces: 1
+  m_IndirectIntensity: 1
+  m_ScaleInLightmap: 1
+  m_LightmapParameters: {fileID: 0}
+  m_LightProbeVolume: {fileID: 0}
+  m_ReflectionProbeVolume: {fileID: 0}
+  m_GIWorkflowMode: 0
+  m_UsePrecomputedLighting: 0
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_BakeResolution: 64
+  m_BakePadding: 2
+  m_BakeAO: 1
+  m_AOSamples: 16
+  m_BakeSoftShadows: 1
+  m_BakeStaticShadowMask: 0
+  m_BakeRealTimeGI: 0
+  m_BakeRealtimeResolution: 128
+  m_BakeRealtimeBounces: 1
+  m_BakeRealtimeAO: 0
+  m_BakeLightmaps: 1
+  m_LightmapsMode: 1
+  m_LightmapsColorSpace: 1
+  m_LightmapsCompression: 1
+  m_LightmapsMaxDistance: 50
+  m_LightmapsMaxStreamingDistance: 0
+  m_LightmapsStreaming: 0
+  m_ProbeVolumeResolution: 1
+  m_ProbeVolumeBorder: 1
+  m_ProbeVolumeImportance: 1
+  m_ProbeVolumeLightingStep: 0.5
+  m_ProbeVolumeShadowStep: 0.5
+  m_ProbeVolumeBounceThreshold: 0.01
+  m_ProbeVolumeOcclusionThreshold: 0.1
+  m_ProbeVolumeFiltering: 1
+  m_ProbeVolumeFilteringMode: 0
+  m_ProbeVolumeFilteringRadius: 1
+  m_ProbeVolumeCompression: 1
+  m_ProbeVolumeQuality: 2
+  m_ProbeVolumeMaxLightCount: 4
+  m_ProbeVolumeMaxBounces: 1
+  m_ProbeVolumeAO: 0
+  m_ProbeVolumeAOSamples: 8
+  m_ProbeVolumeAOThreshold: 0.05
+  m_ProbeVolumeAOIntensity: 1
+  m_ProbeVolumeAOFiltering: 1
+  m_ProbeVolumeAOFilteringRadius: 0.5
+  m_ProbeVolumeLightingMode: 0
+  m_ProbeVolumeLightingIntensity: 1
+  m_ProbeVolumeLightingColor: {r: 1, g: 1, b: 1, a: 1}
+  m_ProbeVolumeLightingTemperature: 6500
+  m_ProbeVolumeLightingDirection: {x: 0, y: 1, z: 0}
+  m_ProbeVolumeLightingSoftness: 0
+  m_ProbeVolumeLightingBounce: 0
+  m_ProbeVolumeLightingBounceIntensity: 0.5
+  m_ProbeVolumeLightingBounceColor: {r: 1, g: 1, b: 1, a: 1}
+  m_ProbeVolumeLightingBounceTemperature: 6500
+  m_ProbeVolumeLightingBounceDirection: {x: 0, y: -1, z: 0}
+  m_ProbeVolumeLightingBounceSoftness: 0
+  m_ProbeVolumeLightingAmbient: 1
+  m_ProbeVolumeLightingAmbientIntensity: 1
+  m_ProbeVolumeLightingAmbientColor: {r: 0.3, g: 0.4, b: 0.6, a: 1}
+  m_ProbeVolumeLightingAmbientTemperature: 6500
+  m_ProbeVolumeLightingEnvironment: 0
+  m_ProbeVolumeLightingEnvironmentIntensity: 1
+  m_ProbeVolumeLightingEnvironmentColor: {r: 1, g: 1, b: 1, a: 1}
+  m_ProbeVolumeLightingEnvironmentTemperature: 6500
+  m_ProbeVolumeLightingReflection: 1
+  m_ProbeVolumeLightingReflectionIntensity: 1
+  m_ProbeVolumeLightingReflectionColor: {r: 1, g: 1, b: 1, a: 1}
+  m_ProbeVolumeLightingReflectionTemperature: 6500
+  m_ProbeVolumeLightingReflectionMip: 0
+  m_ProbeVolumeLightingReflectionBlur: 0
+  m_ProbeVolumeLightingReflectionMask: {fileID: 0}
+  m_ProbeVolumeLightingReflectionMaskIntensity: 1
+  m_ProbeVolumeLightingReflectionMaskColor: {r: 1, g: 1, b: 1, a: 1}
+  m_ProbeVolumeLightingReflectionMaskTemperature: 6500
+  m_ProbeVolumeLightingReflectionMaskMip: 0
+  m_ProbeVolumeLightingReflectionMaskBlur: 0
+  m_ProbeVolumeLightingSky: 1
+  m_ProbeVolumeLightingSkyIntensity: 1
+  m_ProbeVolumeLightingSkyColor: {r: 0.3, g: 0.4, b: 0.6, a: 1}
+  m_ProbeVolumeLightingSkyTemperature: 6500
+  m_ProbeVolumeLightingSkyExposure: 1
+  m_ProbeVolumeLightingSkyRotation: 0
+  m_ProbeVolumeLightingSkyTint: {r: 1, g: 1, b: 1, a: 1}
+  m_ProbeVolumeLightingSkyDesaturation: 0
+  m_ProbeVolumeLightingSkyHDR: 1
+  m_ProbeVolumeLightingSkyHDRIntensity: 1
+  m_ProbeVolumeLightingSkyHDRColor: {r: 1, g: 1, b: 1, a: 1}
+  m_ProbeVolumeLightingSkyHDRTemperature: 6500
+  m_ProbeVolumeLightingSkyHDRExposure: 1
+  m_ProbeVolumeLightingSkyHDRRotation: 0
+  m_ProbeVolumeLightingSkyHDRTint: {r: 1, g: 1, b: 1, a: 1}
+  m_ProbeVolumeLightingSkyHDRDesaturation: 0
+  m_ProbeVolumeLightingFog: 1
+  m_ProbeVolumeLightingFogIntensity: 1
+  m_ProbeVolumeLightingFogColor: {r: 0.5, g: 0.6, b: 0.8, a: 1}
+  m_ProbeVolumeLightingFogTemperature: 6500
+  m_ProbeVolumeLightingFogMode: 1
+  m_ProbeVolumeLightingFogDensity: 0.001
+  m_ProbeVolumeLightingFogStart: 0
+  m_ProbeVolumeLightingFogEnd: 10000
+  m_ProbeVolumeLightingFogHeight: 0
+  m_ProbeVolumeLightingFogHeightFalloff: 1
+  m_ProbeVolumeLightingFogColoration: 0
+  m_ProbeVolumeLightingFogColorationIntensity: 1
+  m_ProbeVolumeLightingFogColorationColor: {r: 0, g: 0, b: 0, a: 1}
+  m_ProbeVolumeLightingFogColorationTemperature: 6500
+  m_ProbeVolumeLightingFogColorationMode: 0
+  m_ProbeVolumeLightingFogColorationDensity: 0.001
+  m_ProbeVolumeLightingFogColorationStart: 0
+  m_ProbeVolumeLightingFogColorationEnd: 10000
+  m_ProbeVolumeLightingFogColorationHeight: 0
+  m_ProbeVolumeLightingFogColorationHeightFalloff: 1

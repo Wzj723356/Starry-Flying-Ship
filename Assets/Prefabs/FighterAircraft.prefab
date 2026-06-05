@@ -1,0 +1,181 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+Prefab:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 2
+  m_EditorClassIdentifier: ""
+  m_RootGameObject: {fileID: 100000}
+  m_Children: []
+--- !u!1 &100000
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 11400000}
+  serializedVersion: 6
+  m_Component:
+  - {fileID: 100100}
+  - {fileID: 100200}
+  - {fileID: 100300}
+  - {fileID: 100400}
+  - {fileID: 100500}
+  - {fileID: 100600}
+  - {fileID: 100700}
+  m_Layer: 0
+  m_Name: FighterAircraft
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!2 &100100
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 11400000}
+  m_GameObject: {fileID: 100000}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children:
+  - {fileID: 100800}
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!2 &100800
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 11400000}
+  m_GameObject: {fileID: 100900}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1, z: 5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 100100}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &100900
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 11400000}
+  serializedVersion: 6
+  m_Component: []
+  m_Layer: 0
+  m_Name: Muzzle
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!24 &100200
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 11400000}
+  m_GameObject: {fileID: 100000}
+  m_Mesh: {fileID: 0}
+--- !u!28 &100300
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 11400000}
+  m_GameObject: {fileID: 100000}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_Materials:
+  - {fileID: 54}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 1
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ReflectionProbeOverride: {fileID: 0}
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+--- !u!26 &100400
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 11400000}
+  m_GameObject: {fileID: 100000}
+  m_Enabled: 1
+  m_IsKinematic: 0
+  m_Interpolate: 1
+  m_Constraints: 0
+  m_Mass: 5000
+  m_Drag: 0.1
+  m_AngularDrag: 0.1
+  m_UseGravity: 1
+  m_Velocity: {x: 0, y: 0, z: 0}
+  m_AngularVelocity: {x: 0, y: 0, z: 0}
+  m_ResetCenterOfMass: 0
+  m_CenterOfMass: {x: 0, y: -0.5, z: 2}
+  m_ResetInertiaTensor: 0
+  m_InertiaTensor: {x: 1000, y: 500, z: 1500}
+  m_InertiaTensorRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_SleepThreshold: 0.005
+--- !u!2 &100500
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 11400000}
+  m_GameObject: {fileID: 100000}
+  m_Enabled: 1
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Material: {fileID: 0}
+  m_Center: {x: 0, y: 0, z: 2}
+  m_Size: {x: 2, y: 1, z: 8}
+--- !u!115 &100600
+FlightController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 11400000}
+  m_GameObject: {fileID: 100000}
+  m_Enabled: 1
+  maxThrust: 15000
+  maxSpeed: 800
+  maxAltitude: 12000
+  pitchSensitivity: 2
+  rollSensitivity: 3
+  yawSensitivity: 1.5
+  flapExtensionSpeed: 5
+  flapMaxExtension: 0.5
+--- !u!115 &100700
+AircraftPhysics:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 11400000}
+  m_GameObject: {fileID: 100000}
+  m_Enabled: 1
+  wingArea: 20
+  liftCoefficient: 1.2
+  dragCoefficient: 0.02
+  inducedDragCoefficient: 0.05
+  pitchStability: 0.1
+  rollStability: 0.15
+  yawStability: 0.08
+  stallAngle: 15
+  criticalMach: 0.85
