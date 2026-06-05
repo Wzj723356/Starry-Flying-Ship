@@ -40,6 +40,7 @@ public class StarShipFlightController : MonoBehaviour
     private Rigidbody rb;
     private InputManager input;
     private EngineController[] engines;
+    private Damageable damageable;
     private bool afterburnerActive = false;
     private float currentThrust = 0f;
     private float targetThrust = 0f;
@@ -62,6 +63,8 @@ public class StarShipFlightController : MonoBehaviour
         {
             input = gameObject.AddComponent<InputManager>();
         }
+        
+        damageable = GetComponent<Damageable>();
         
         InitializeEngines();
         CreateRectangularTestModel();
@@ -214,9 +217,16 @@ public class StarShipFlightController : MonoBehaviour
     {
         float speedFactor = CalculateSpeedFactor();
         
-        Vector3 pitchTorque = transform.right * pitch * pitchSensitivity * speedFactor * Time.fixedDeltaTime;
-        Vector3 rollTorque = transform.forward * roll * rollSensitivity * speedFactor * Time.fixedDeltaTime;
-        Vector3 yawTorque = transform.up * yaw * yawSensitivity * speedFactor * Time.fixedDeltaTime;
+        // 受损影响：获取操控惩罚
+        float handlingMultiplier = 1f;
+        if (damageable != null)
+        {
+            handlingMultiplier = damageable.GetHandlingMultiplier();
+        }
+        
+        Vector3 pitchTorque = transform.right * pitch * pitchSensitivity * speedFactor * handlingMultiplier * Time.fixedDeltaTime;
+        Vector3 rollTorque = transform.forward * roll * rollSensitivity * speedFactor * handlingMultiplier * Time.fixedDeltaTime;
+        Vector3 yawTorque = transform.up * yaw * yawSensitivity * speedFactor * handlingMultiplier * Time.fixedDeltaTime;
         
         rb.AddTorque(pitchTorque + rollTorque + yawTorque);
     }
@@ -238,8 +248,21 @@ public class StarShipFlightController : MonoBehaviour
     {
         currentThrust = Mathf.MoveTowards(currentThrust, targetThrust, thrustSensitivity * Time.fixedDeltaTime);
         
+        // 受损影响：获取推力惩罚
         float thrustMultiplier = afterburnerActive ? afterburnerThrustMultiplier : 1f;
-        Vector3 thrustForce = transform.forward * currentThrust * thrustMultiplier;
+        float damageMultiplier = 1f;
+        if (damageable != null)
+        {
+            damageMultiplier = damageable.GetThrustMultiplier();
+            
+            // 发动机全损警告
+            if (damageable.AreEnginesDestroyed())
+            {
+                thrustMultiplier *= 0.1f; // 只有备用动力
+            }
+        }
+        
+        Vector3 thrustForce = transform.forward * currentThrust * thrustMultiplier * damageMultiplier;
         
         rb.AddForce(thrustForce, ForceMode.Force);
     }
@@ -288,6 +311,13 @@ public class StarShipFlightController : MonoBehaviour
     {
         Vector3 pos = transform.position;
         
+        // 受损影响：获取速度惩罚
+        float speedCap = maxSpeed;
+        if (damageable != null)
+        {
+            speedCap *= damageable.GetSpeedMultiplier();
+        }
+        
         if (pos.y > maxAltitude)
         {
             pos.y = maxAltitude;
@@ -312,9 +342,9 @@ public class StarShipFlightController : MonoBehaviour
         
         transform.position = pos;
         
-        if (rb.velocity.magnitude > maxSpeed)
+        if (rb.velocity.magnitude > speedCap)
         {
-            rb.velocity = rb.velocity.normalized * maxSpeed;
+            rb.velocity = rb.velocity.normalized * speedCap;
         }
     }
     
