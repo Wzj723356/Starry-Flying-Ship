@@ -35,7 +35,9 @@ public class HUDManager : MonoBehaviour
     public Image radarDisplay;      // 雷达显示
     public Text radarRangeText;     // 雷达范围
     public Transform radarCenter;   // 雷达中心点
-    public float radarRange = 50000f; // 雷达范围(米)
+    public float radarRangeFront = 100000f; // 正前雷达范围(米) = 100km
+    public float radarRangeSide = 60000f;   // 侧面雷达范围(米) = 60km
+    public float radarRangeRear = 40000f;   // 后方导弹检测范围(米) = 40km
     
     [Header("=== 底部状态栏 ===")]
     public Text connectionStatus;   // 联机状态
@@ -463,8 +465,7 @@ public class HUDManager : MonoBehaviour
         // 雷达范围显示
         if (radarRangeText != null)
         {
-            float rangeKm = radarRange / 1000f;
-            radarRangeText.text = $"{rangeKm:F0}km";
+            radarRangeText.text = $"前100km 侧60km";
         }
         
         // 雷达脉冲动画
@@ -491,12 +492,12 @@ public class HUDManager : MonoBehaviour
             float thrust = shipController.GetThrustPercentage();
             if (thrust > 0.9f)
             {
-                consoleStatus.text = "操作台: 超载";
+                consoleStatus.text = "操作台: 超载 | 雷达: 前100km 侧60km 后40km";
                 consoleStatus.color = warningColor;
             }
             else
             {
-                consoleStatus.text = "操作台: 正常";
+                consoleStatus.text = "操作台: 正常 | 雷达: 前100km 侧60km 后40km";
                 consoleStatus.color = normalColor;
             }
         }
@@ -916,84 +917,6 @@ public class HUDManager : MonoBehaviour
                 closestDistance = distance;
                 missileApproachDirection = missile.transform.forward;
             }
-        }
-    }
-    
-    // ===== 检测是否有导弹来袭 =====
-    bool IsMissileIncoming()
-    {
-        // 检查所有敌方导弹
-        var missiles = Object.FindObjectsOfType<EnemyMissile>();
-        incomingMissileCount = 0;
-        
-        foreach (var missile in missiles)
-        {
-            if (missile == null || missile.launcher == null) continue;
-            
-            // 检测导弹是否朝向玩家
-            Vector3 toPlayer = (transform.position - missile.transform.position).normalized;
-            float angle = Vector3.Angle(missile.transform.forward, toPlayer);
-            
-            float distance = Vector3.Distance(transform.position, missile.transform.position);
-            
-            if (angle < 30f && distance < 2000f) // 导弹朝向玩家且在范围内
-            {
-                incomingMissileCount++;
-                
-                // 更新来袭方向
-                if (distance < 1500f)
-                {
-                    missileApproachDirection = missile.transform.forward;
-                }
-            }
-        }
-        
-        return incomingMissileCount > 0;
-    }
-    
-    // 更新导弹来袭指示器
-    void UpdateMissileIndicators()
-    {
-        if (missileIndicators == null || missileIndicators.Length == 0) return;
-        
-        var missiles = Object.FindObjectsOfType<EnemyMissile>();
-        int indicatorIndex = 0;
-        
-        foreach (var missile in missiles)
-        {
-            if (missile == null || missile.launcher == null) continue;
-            if (indicatorIndex >= missileIndicators.Length) break;
-            
-            Vector3 toPlayer = (transform.position - missile.transform.position).normalized;
-            float angle = Vector3.Angle(missile.transform.forward, toPlayer);
-            float distance = Vector3.Distance(transform.position, missile.transform.position);
-            
-            if (angle < 45f && distance < 3000f)
-            {
-                if (missileIndicators[indicatorIndex] != null)
-                {
-                    missileIndicators[indicatorIndex].enabled = true;
-                    
-                    // 红色圆点闪烁
-                    float flash = Mathf.PingPong(Time.time * 8f, 1f);
-                    
-                    // 根据距离显示不同颜色闪烁
-                    if (distance < 500f)
-                        missileIndicators[indicatorIndex].color = Color.Lerp(dangerColor, Color.white, flash);
-                    else if (distance < 1000f)
-                        missileIndicators[indicatorIndex].color = Color.Lerp(warningColor, dangerColor, flash);
-                    else
-                        missileIndicators[indicatorIndex].color = Color.Lerp(normalColor, warningColor, flash);
-                }
-                indicatorIndex++;
-            }
-        }
-        
-        // 隐藏未使用的指示器
-        for (int i = indicatorIndex; i < missileIndicators.Length; i++)
-        {
-            if (missileIndicators[i] != null)
-                missileIndicators[i].enabled = false;
         }
     }
     
