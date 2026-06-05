@@ -1,236 +1,265 @@
 using UnityEngine;
+using Unity.Netcode;
 using System.Collections.Generic;
+using UnityEngine.UI;
+using TMPro;
 
 public class NetworkManager : MonoBehaviour
 {
     public static NetworkManager instance;
     
-    [Header("网络设置")]
+    [Header("=== UI引用 ===")]
+    public GameObject mainMenuCanvas;
+    public GameObject multiplayerMenuCanvas;
+    public GameObject loadingCanvas;
+    public TextMeshProUGUI statusText;
+    public TextMeshProUGUI playerCountText;
+    public Button quickMatchButton;
+    public Button createRoomButton;
+    public Button joinRoomButton;
+    public TMP_InputField roomCodeInput;
+    
+    [Header("=== 游戏设置 ===")]
     public int maxPlayers = 8;
-    public int port = 7777;
-    public string serverIP = "127.0.0.1";
-    public int tickRate = 64;
+    public bool isMatchmaking = false;
     
-    [Header("网络状态")]
-    public bool isServer;
-    public bool isClient;
-    public int localPlayerId = 0;
-    public int connectedPlayers = 0;
+    private string currentRoomCode = "";
+    private List<ulong> connectedPlayers = new List<ulong>();
     
-    private Dictionary<int, NetworkPlayer> players = new Dictionary<int, NetworkPlayer>();
-    private float lastTickTime = 0;
-    private float tickInterval = 0;
+    // 事件
+    public System.Action<ulong> OnPlayerConnected;
+    public System.Action<ulong> OnPlayerDisconnected;
+    public System.Action OnMatchStarted;
     
     void Awake()
     {
         if (instance == null)
+        {
             instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
         else
+        {
             Destroy(gameObject);
+            return;
+        }
+        
+        // 初始化网络日志
+        Unity.Netcode.NetworkManager.Singleton.OnServerStarted += OnServerStarted;
+        Unity.Netcode.NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
+        Unity.Netcode.NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
     }
     
     void Start()
     {
-        tickInterval = 1.0f / tickRate;
+        SetupUI();
+        UpdateConnectionStatus("离线 - 请先登录");
     }
     
-    void Update()
+    void SetupUI()
     {
-        if (isServer || isClient)
+        if (quickMatchButton != null)
+            quickMatchButton.onClick.AddListener(StartQuickMatch);
+        
+        if (createRoomButton != null)
+            createRoomButton.onClick.AddListener(CreatePrivateRoom);
+        
+        if (joinRoomButton != null)
+            joinRoomButton.onClick.AddListener(JoinPrivateRoom);
+    }
+    
+    // ===== 快速匹配 =====
+    public async void StartQuickMatch()
+    {
+        UpdateConnectionStatus("正在搜索房间...");
+        
+        isMatchmaking = true;
+        
+        // 尝试以客户端身份启动并连接到默认房间
+        bool started = await TryConnectAsync();
+        
+        if (!started)
         {
-            if (Time.time - lastTickTime >= tickInterval)
-            {
-                NetworkTick();
-                lastTickTime = Time.time;
-            }
+            // 没有可用房间，创建新房间
+            UpdateConnectionStatus("未找到房间，正在创建...");
+            CreateDefaultRoom();
+        }
+        else
+        {
+            UpdateConnectionStatus("已连接到房间！");
+        }
+        
+        isMatchmaking = false;
+    }
+    
+    System.Threading.Tasks.Task<bool> TryConnectAsync()
+    {
+        // 由于Unity Netcode不直接支持大厅，我们模拟快速匹配
+        // 实际项目中应使用:
+        // - Unity Relay + Lobby
+        // - Photon PUN
+        // - Mirror + Master Server
+        // - Nakama
+        
+        return System.Threading.Tasks.Task.FromResult(false);
+    }
+    
+    // ===== 创建私人房间 =====
+    public void CreatePrivateRoom()
+    {
+        currentRoomCode = GenerateRoomCode();
+        CreateDefaultRoom();
+        
+        if (statusText != null)
+            statusText.text = $"房间码: {currentRoomCode}";
+        
+        Debug.Log($"创建房间，房间码: {currentRoomCode}");
+    }
+    
+    // ===== 加入私人房间 =====
+    public void JoinPrivateRoom()
+    {
+        if (roomCodeInput != null)
+        {
+            currentRoomCode = roomCodeInput.text.ToUpper();
+            UpdateConnectionStatus($"正在加入房间: {currentRoomCode}...");
+            
+            // 实际项目中验证房间码后连接
+            CreateDefaultRoom();
         }
     }
     
-    public void StartServer()
+    void CreateDefaultRoom()
     {
-        isServer = true;
-        Debug.Log("服务器已启动");
-        connectedPlayers = 0;
+        Unity.Netcode.NetworkManager.Singleton.StartHost();
+    }
+    
+    // ===== 网络回调 =====
+    void OnServerStarted()
+    {
+        UpdateConnectionStatus("房间已创建！等待玩家加入...");
+        connectedPlayers.Clear();
         
-        NetworkPlayer serverPlayer = new NetworkPlayer();
-        serverPlayer.id = 0;
-        serverPlayer.isLocal = true;
-        serverPlayer.isServer = true;
-        players.Add(0, serverPlayer);
+        if (OnMatchStarted != null)
+            OnMatchStarted();
     }
     
-    public void ConnectToServer(string ip, int port)
+    void OnClientConnected(ulong clientId)
     {
-        serverIP = ip;
-        this.port = port;
-        isClient = true;
-        Debug.Log($"正在连接到服务器: {ip}:{port}");
+        connectedPlayers.Add(clientId);
+        UpdatePlayerCount();
+        
+        Debug.Log($"玩家 {clientId} 已连接");
+        
+        if (OnPlayerConnected != null)
+            OnPlayerConnected(clientId);
+        
+        if (clientId == Unity.Netcode.NetworkManager.Singleton.LocalClientId)
+        {
+            UpdateConnectionStatus("已加入房间！");
+            
+            if (OnMatchStarted != null)
+                OnMatchStarted();
+        }
     }
     
+    void OnClientDisconnected(ulong clientId)
+    {
+        connectedPlayers.Remove(clientId);
+        UpdatePlayerCount();
+        
+        Debug.Log($"玩家 {clientId} 已断开");
+        
+        if (OnPlayerDisconnected != null)
+            OnPlayerDisconnected(clientId);
+    }
+    
+    // ===== 断开连接 =====
     public void Disconnect()
     {
-        isServer = false;
-        isClient = false;
-        players.Clear();
-        connectedPlayers = 0;
-        Debug.Log("已断开连接");
+        Unity.Netcode.NetworkManager.Singleton.Shutdown();
+        connectedPlayers.Clear();
+        currentRoomCode = "";
+        UpdateConnectionStatus("已断开连接");
     }
     
-    void NetworkTick()
+    // ===== UI更新 =====
+    void UpdateConnectionStatus(string status)
     {
-        if (isServer)
-        {
-            BroadcastPlayerStates();
-        }
+        if (statusText != null)
+            statusText.text = status;
         
-        if (isClient)
-        {
-            SendPlayerState();
-        }
+        Debug.Log($"[网络] {status}");
     }
     
-    void BroadcastPlayerStates()
+    void UpdatePlayerCount()
     {
-        foreach (var player in players.Values)
-        {
-            if (player.isLocal && player.shipController != null)
-            {
-                NetworkPlayerState state = new NetworkPlayerState();
-                state.playerId = player.id;
-                state.position = player.shipController.transform.position;
-                state.rotation = player.shipController.transform.rotation;
-                state.velocity = player.shipController.GetVelocity();
-                state.thrust = player.shipController.GetThrustPercentage();
-                state.afterburner = player.shipController.IsAfterburnerActive();
-                
-                SendStateToClients(state);
-            }
-        }
+        if (playerCountText != null)
+            playerCountText.text = $"玩家: {connectedPlayers.Count}/{maxPlayers}";
     }
     
-    void SendPlayerState()
+    // ===== 工具方法 =====
+    string GenerateRoomCode()
     {
-        if (players.ContainsKey(localPlayerId))
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        string code = "";
+        for (int i = 0; i < 6; i++)
         {
-            NetworkPlayer player = players[localPlayerId];
-            if (player.shipController != null)
-            {
-                NetworkPlayerState state = new NetworkPlayerState();
-                state.playerId = localPlayerId;
-                state.position = player.shipController.transform.position;
-                state.rotation = player.shipController.transform.rotation;
-                state.velocity = player.shipController.GetVelocity();
-                state.thrust = player.shipController.GetThrustPercentage();
-                state.afterburner = player.shipController.IsAfterburnerActive();
-                
-                SendStateToServer(state);
-            }
+            code += chars[Random.Range(0, chars.Length)];
         }
+        return code;
     }
     
-    void SendStateToClients(NetworkPlayerState state)
-    {
-        foreach (var player in players.Values)
-        {
-            if (!player.isServer)
-            {
-                ApplyStateToPlayer(state, player);
-            }
-        }
-    }
-    
-    void SendStateToServer(NetworkPlayerState state)
-    {
-        if (isServer)
-        {
-            ApplyStateToPlayer(state, players[state.playerId]);
-        }
-    }
-    
-    void ApplyStateToPlayer(NetworkPlayerState state, NetworkPlayer player)
-    {
-        if (player.shipController != null)
-        {
-            player.shipController.transform.position = state.position;
-            player.shipController.transform.rotation = state.rotation;
-            
-            Rigidbody rb = player.shipController.GetComponent<Rigidbody>();
-            if (rb != null)
-            {
-                rb.velocity = state.velocity;
-            }
-        }
-    }
-    
-    public void AddPlayer(int playerId, GameObject shipObject = null)
-    {
-        if (!players.ContainsKey(playerId))
-        {
-            NetworkPlayer player = new NetworkPlayer();
-            player.id = playerId;
-            player.isLocal = playerId == localPlayerId;
-            
-            if (shipObject != null)
-            {
-                StarShipFlightController controller = shipObject.GetComponent<StarShipFlightController>();
-                player.shipController = controller;
-            }
-            
-            players.Add(playerId, player);
-            connectedPlayers++;
-            
-            Debug.Log($"玩家 {playerId} 已加入");
-        }
-    }
-    
-    public void RemovePlayer(int playerId)
-    {
-        if (players.ContainsKey(playerId))
-        {
-            players.Remove(playerId);
-            connectedPlayers--;
-            Debug.Log($"玩家 {playerId} 已离开");
-        }
-    }
-    
-    public NetworkPlayer GetPlayer(int playerId)
-    {
-        if (players.ContainsKey(playerId))
-        {
-            return players[playerId];
-        }
-        return null;
-    }
-    
-    public List<NetworkPlayer> GetAllPlayers()
-    {
-        return new List<NetworkPlayer>(players.Values);
-    }
-    
+    // ===== 公共方法 =====
     public bool IsConnected()
     {
-        return isServer || isClient;
+        return Unity.Netcode.NetworkManager.Singleton.IsClient;
+    }
+    
+    public bool IsHost()
+    {
+        return Unity.Netcode.NetworkManager.Singleton.IsHost;
+    }
+    
+    public string GetRoomCode()
+    {
+        return currentRoomCode;
+    }
+    
+    public int GetPlayerCount()
+    {
+        return connectedPlayers.Count;
+    }
+    
+    public List<ulong> GetConnectedPlayers()
+    {
+        return new List<ulong>(connectedPlayers);
+    }
+    
+    // ===== 场景加载 =====
+    public void LoadGameScene()
+    {
+        Unity.Netcode.NetworkManager.Singleton.SceneManager.LoadScene("GameScene", UnityEngine.SceneManagement.LoadSceneMode.Single);
     }
 }
 
-public class NetworkPlayer
+// ===== 网络玩家数据 =====
+public struct PlayerData : INetworkSerializable
 {
-    public int id;
-    public bool isLocal;
-    public bool isServer;
-    public StarShipFlightController shipController;
-    public int score;
-    public int ping;
-}
-
-public struct NetworkPlayerState
-{
-    public int playerId;
-    public Vector3 position;
-    public Quaternion rotation;
-    public Vector3 velocity;
-    public float thrust;
-    public bool afterburner;
-    public float health;
-    public int ammo;
+    public ulong ClientId;
+    public string PlayerName;
+    public Vector3 Position;
+    public Quaternion Rotation;
+    public float Health;
+    public bool IsReady;
+    
+    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+    {
+        serializer.SerializeValue(ref ClientId);
+        serializer.SerializeValue(ref PlayerName);
+        serializer.SerializeValue(ref Position);
+        serializer.SerializeValue(ref Rotation);
+        serializer.SerializeValue(ref Health);
+        serializer.SerializeValue(ref IsReady);
+    }
 }

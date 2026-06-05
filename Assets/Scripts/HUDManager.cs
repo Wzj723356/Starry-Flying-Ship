@@ -63,13 +63,20 @@ public class HUDManager : MonoBehaviour
     [Header("=== 被锁定警告 ===")]
     public Image lockWarningPanel;    // 锁定警告面板
     public Text lockWarningText;      // 锁定警告文字
-    public Image[] missileIndicators; // 导弹来袭指示器
+    public Image[] missileIndicators; // 导弹来袭指示器（红色圆点）
     public Text maneuverHintText;     // 39机动提示
+    
+    [Header("=== 雷达下方警告框 ===")]
+    public Image radarWarningPanel;   // 雷达下方警告面板
+    public Text radarWarningText;     // 警告框内文字
+    public Text missileDirectionText; // 导弹来袭方向文字
+    public Image missileWarningDot;    // 导弹红色圆点指示器
     
     private bool isBeingLocked = false;
     private bool isMissileIncoming = false;
     private int incomingMissileCount = 0;
     private float lockWarningTimer = 0f;
+    private Vector3 missileApproachDirection;
     
     [Header("=== 组件引用 ===")]
     public StarShipFlightController shipController;
@@ -135,6 +142,12 @@ public class HUDManager : MonoBehaviour
         // 初始化锁定警告
         if (lockWarningPanel != null) lockWarningPanel.enabled = false;
         if (maneuverHintText != null) maneuverHintText.enabled = false;
+        
+        // 初始化雷达下方警告框
+        if (radarWarningPanel != null) radarWarningPanel.enabled = false;
+        if (radarWarningText != null) radarWarningText.enabled = false;
+        if (missileDirectionText != null) missileDirectionText.enabled = false;
+        if (missileWarningDot != null) missileWarningDot.enabled = false;
     }
     
     // ===== 顶部数据区 =====
@@ -648,6 +661,9 @@ public class HUDManager : MonoBehaviour
             
             // 更新导弹来袭指示器
             UpdateMissileIndicators();
+            
+            // 更新雷达下方警告框
+            UpdateRadarWarningBox();
         }
         else
         {
@@ -673,6 +689,9 @@ public class HUDManager : MonoBehaviour
                         indicator.enabled = false;
                 }
             }
+            
+            // 隐藏雷达下方警告框
+            HideRadarWarningBox();
         }
     }
     
@@ -760,6 +779,211 @@ public class HUDManager : MonoBehaviour
                         missileIndicators[indicatorIndex].color = warningColor;
                     else
                         missileIndicators[indicatorIndex].color = normalColor;
+                }
+                indicatorIndex++;
+            }
+        }
+        
+        // 隐藏未使用的指示器
+        for (int i = indicatorIndex; i < missileIndicators.Length; i++)
+        {
+            if (missileIndicators[i] != null)
+                missileIndicators[i].enabled = false;
+        }
+    }
+    
+    // ===== 雷达下方警告框（导弹来袭）=====
+    void UpdateRadarWarningBox()
+    {
+        if (radarWarningPanel == null) return;
+        
+        // 显示警告框
+        radarWarningPanel.enabled = true;
+        
+        // 警告框闪烁效果
+        float flash = Mathf.PingPong(Time.time * 5f, 1f);
+        radarWarningPanel.color = Color.Lerp(
+            new Color(0.8f, 0f, 0f, 0.6f),  // 深红
+            new Color(1f, 0.2f, 0.2f, 0.9f), // 亮红
+            flash
+        );
+        
+        // 警告文字闪烁
+        if (radarWarningText != null)
+        {
+            radarWarningText.enabled = true;
+            radarWarningText.text = "⚠️ 警告 ⚠️";
+            radarWarningText.color = Color.Lerp(dangerColor, Color.white, flash);
+        }
+        
+        // 显示导弹来袭方向
+        if (missileDirectionText != null)
+        {
+            missileDirectionText.enabled = true;
+            
+            // 计算导弹来袭方向
+            string direction = GetMissileDirection();
+            missileDirectionText.text = $"导弹来袭: {direction}";
+            missileDirectionText.color = Color.Lerp(warningColor, dangerColor, flash);
+        }
+        
+        // 导弹红色圆点闪烁标记
+        UpdateMissileWarningDot();
+    }
+    
+    void HideRadarWarningBox()
+    {
+        if (radarWarningPanel != null)
+            radarWarningPanel.enabled = false;
+        
+        if (radarWarningText != null)
+            radarWarningText.enabled = false;
+        
+        if (missileDirectionText != null)
+            missileDirectionText.enabled = false;
+        
+        if (missileWarningDot != null)
+            missileWarningDot.enabled = false;
+    }
+    
+    // 获取导弹来袭方向
+    string GetMissileDirection()
+    {
+        if (shipController == null) return "未知";
+        
+        Vector3 localDir = transform.InverseTransformDirection(missileApproachDirection);
+        
+        float angleH = Mathf.Atan2(localDir.x, localDir.z) * Mathf.Rad2Deg;
+        float angleV = Mathf.Asin(localDir.y) * Mathf.Rad2Deg;
+        
+        // 水平方向
+        string horizontal = "";
+        if (angleH > 45) horizontal = "右";
+        else if (angleH < -45) horizontal = "左";
+        else horizontal = "正";
+        
+        // 垂直方向
+        string vertical = "";
+        if (angleV > 20) vertical = "上方";
+        else if (angleV < -20) vertical = "下方";
+        
+        if (horizontal == "正" && vertical == "")
+            return "正后方";
+        else if (horizontal == "正")
+            return vertical;
+        else if (vertical == "")
+            return horizontal;
+        else
+            return horizontal + vertical;
+    }
+    
+    // 导弹红色圆点闪烁标记
+    void UpdateMissileWarningDot()
+    {
+        if (missileWarningDot == null) return;
+        
+        missileWarningDot.enabled = true;
+        
+        // 红色圆点快速闪烁
+        float flash = Mathf.PingPong(Time.time * 10f, 1f);
+        missileWarningDot.color = Color.Lerp(
+            new Color(1f, 0f, 0f, 0.3f),  // 暗红半透明
+            new Color(1f, 0f, 0f, 1f),    // 亮红不透明
+            flash
+        );
+        
+        // 圆点缩放脉冲
+        float scale = 1f + flash * 0.3f;
+        missileWarningDot.transform.localScale = Vector3.one * scale;
+    }
+    
+    // 更新导弹来袭方向
+    void UpdateMissileApproachDirection()
+    {
+        var missiles = Object.FindObjectsOfType<EnemyMissile>();
+        float closestDistance = float.MaxValue;
+        missileApproachDirection = -transform.forward;
+        
+        foreach (var missile in missiles)
+        {
+            if (missile == null || missile.launcher == null) continue;
+            
+            Vector3 toPlayer = transform.position - missile.transform.position;
+            float distance = toPlayer.magnitude;
+            
+            if (distance < closestDistance)
+            {
+                closestDistance = distance;
+                missileApproachDirection = missile.transform.forward;
+            }
+        }
+    }
+    
+    // ===== 检测是否有导弹来袭 =====
+    bool IsMissileIncoming()
+    {
+        // 检查所有敌方导弹
+        var missiles = Object.FindObjectsOfType<EnemyMissile>();
+        incomingMissileCount = 0;
+        
+        foreach (var missile in missiles)
+        {
+            if (missile == null || missile.launcher == null) continue;
+            
+            // 检测导弹是否朝向玩家
+            Vector3 toPlayer = (transform.position - missile.transform.position).normalized;
+            float angle = Vector3.Angle(missile.transform.forward, toPlayer);
+            
+            float distance = Vector3.Distance(transform.position, missile.transform.position);
+            
+            if (angle < 30f && distance < 2000f) // 导弹朝向玩家且在范围内
+            {
+                incomingMissileCount++;
+                
+                // 更新来袭方向
+                if (distance < 1500f)
+                {
+                    missileApproachDirection = missile.transform.forward;
+                }
+            }
+        }
+        
+        return incomingMissileCount > 0;
+    }
+    
+    // 更新导弹来袭指示器
+    void UpdateMissileIndicators()
+    {
+        if (missileIndicators == null || missileIndicators.Length == 0) return;
+        
+        var missiles = Object.FindObjectsOfType<EnemyMissile>();
+        int indicatorIndex = 0;
+        
+        foreach (var missile in missiles)
+        {
+            if (missile == null || missile.launcher == null) continue;
+            if (indicatorIndex >= missileIndicators.Length) break;
+            
+            Vector3 toPlayer = (transform.position - missile.transform.position).normalized;
+            float angle = Vector3.Angle(missile.transform.forward, toPlayer);
+            float distance = Vector3.Distance(transform.position, missile.transform.position);
+            
+            if (angle < 45f && distance < 3000f)
+            {
+                if (missileIndicators[indicatorIndex] != null)
+                {
+                    missileIndicators[indicatorIndex].enabled = true;
+                    
+                    // 红色圆点闪烁
+                    float flash = Mathf.PingPong(Time.time * 8f, 1f);
+                    
+                    // 根据距离显示不同颜色闪烁
+                    if (distance < 500f)
+                        missileIndicators[indicatorIndex].color = Color.Lerp(dangerColor, Color.white, flash);
+                    else if (distance < 1000f)
+                        missileIndicators[indicatorIndex].color = Color.Lerp(warningColor, dangerColor, flash);
+                    else
+                        missileIndicators[indicatorIndex].color = Color.Lerp(normalColor, warningColor, flash);
                 }
                 indicatorIndex++;
             }
