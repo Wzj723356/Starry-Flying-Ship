@@ -22,9 +22,11 @@ public class NetworkManager : MonoBehaviour
     [Header("=== 游戏设置 ===")]
     public int maxPlayers = 8;
     public bool isMatchmaking = false;
+    public string defaultPlayerName = "Player";
     
     private string currentRoomCode = "";
     private List<ulong> connectedPlayers = new List<ulong>();
+    private Dictionary<ulong, string> playerNames = new Dictionary<ulong, string>();
     
     // 事件
     public System.Action<ulong> OnPlayerConnected;
@@ -139,6 +141,13 @@ public class NetworkManager : MonoBehaviour
     {
         UpdateConnectionStatus("房间已创建！等待玩家加入...");
         connectedPlayers.Clear();
+        playerNames.Clear();
+        
+        // 添加主机自己
+        ulong localClientId = Unity.Netcode.NetworkManager.Singleton.LocalClientId;
+        connectedPlayers.Add(localClientId);
+        playerNames[localClientId] = $"{defaultPlayerName} {localClientId}";
+        UpdatePlayerCount();
         
         if (OnMatchStarted != null)
             OnMatchStarted();
@@ -146,13 +155,17 @@ public class NetworkManager : MonoBehaviour
     
     void OnClientConnected(ulong clientId)
     {
-        connectedPlayers.Add(clientId);
-        UpdatePlayerCount();
-        
-        Debug.Log($"玩家 {clientId} 已连接");
-        
-        if (OnPlayerConnected != null)
-            OnPlayerConnected(clientId);
+        if (!connectedPlayers.Contains(clientId))
+        {
+            connectedPlayers.Add(clientId);
+            playerNames[clientId] = $"{defaultPlayerName} {clientId}";
+            UpdatePlayerCount();
+            
+            Debug.Log($"玩家 {clientId} 已连接");
+            
+            if (OnPlayerConnected != null)
+                OnPlayerConnected(clientId);
+        }
         
         if (clientId == Unity.Netcode.NetworkManager.Singleton.LocalClientId)
         {
@@ -166,6 +179,7 @@ public class NetworkManager : MonoBehaviour
     void OnClientDisconnected(ulong clientId)
     {
         connectedPlayers.Remove(clientId);
+        playerNames.Remove(clientId);
         UpdatePlayerCount();
         
         Debug.Log($"玩家 {clientId} 已断开");
@@ -179,6 +193,7 @@ public class NetworkManager : MonoBehaviour
     {
         Unity.Netcode.NetworkManager.Singleton.Shutdown();
         connectedPlayers.Clear();
+        playerNames.Clear();
         currentRoomCode = "";
         UpdateConnectionStatus("已断开连接");
     }
@@ -196,6 +211,22 @@ public class NetworkManager : MonoBehaviour
     {
         if (playerCountText != null)
             playerCountText.text = $"玩家: {connectedPlayers.Count}/{maxPlayers}";
+    }
+    
+    // ===== 玩家名称管理 =====
+    public void SetPlayerName(ulong playerId, string playerName)
+    {
+        playerNames[playerId] = playerName;
+    }
+    
+    public string GetPlayerName(ulong playerId)
+    {
+        return playerNames.ContainsKey(playerId) ? playerNames[playerId] : $"Player {playerId}";
+    }
+    
+    public Dictionary<ulong, string> GetAllPlayerNames()
+    {
+        return new Dictionary<ulong, string>(playerNames);
     }
     
     // ===== 工具方法 =====

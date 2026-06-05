@@ -11,12 +11,27 @@ public class FriendInfo
     public DateTime lastSeen;
 }
 
+[Serializable]
+public class FriendChatMessage
+{
+    public string senderId;
+    public string receiverId;
+    public string message;
+    public DateTime timestamp;
+    public bool isRead;
+}
+
 public class FriendSystem : MonoBehaviour
 {
     public static FriendSystem instance;
 
     private List<FriendInfo> friends = new List<FriendInfo>();
     private List<string> pendingRequests = new List<string>();
+    private Dictionary<string, List<FriendChatMessage>> friendChatHistory = new Dictionary<string, List<FriendChatMessage>>();
+
+    public event Action<FriendChatMessage> OnFriendMessageReceived;
+    public event Action<FriendInfo> OnFriendOnlineStatusChanged;
+    public event Action<string, string> OnFriendRequestReceived;
 
     void Awake()
     {
@@ -34,6 +49,7 @@ public class FriendSystem : MonoBehaviour
     void Start()
     {
         LoadFriendsFromSave();
+        LoadChatHistory();
     }
 
     // ===== 好友管理 =====
@@ -51,6 +67,12 @@ public class FriendSystem : MonoBehaviour
 
         friends.Add(newFriend);
         SaveFriends();
+        
+        if (!friendChatHistory.ContainsKey(playerId))
+        {
+            friendChatHistory[playerId] = new List<FriendChatMessage>();
+        }
+
         return true;
     }
 
@@ -60,7 +82,9 @@ public class FriendSystem : MonoBehaviour
         if (friend != null)
         {
             friends.Remove(friend);
+            friendChatHistory.Remove(playerId);
             SaveFriends();
+            SaveChatHistory();
             return true;
         }
         return false;
@@ -79,6 +103,11 @@ public class FriendSystem : MonoBehaviour
     public List<FriendInfo> GetOnlineFriends()
     {
         return friends.FindAll(f => f.isOnline);
+    }
+
+    public FriendInfo GetFriend(string playerId)
+    {
+        return friends.Find(f => f.playerId == playerId);
     }
 
     // ===== 好友请求 =====
@@ -110,6 +139,114 @@ public class FriendSystem : MonoBehaviour
         return new List<string>(pendingRequests);
     }
 
+    // ===== 好友聊天 =====
+    public void SendMessageToFriend(string friendId, string message)
+    {
+        if (!IsFriend(friendId)) return;
+        if (string.IsNullOrEmpty(message)) return;
+
+        FriendChatMessage chatMessage = new FriendChatMessage
+        {
+            senderId = "Me",
+            receiverId = friendId,
+            message = message,
+            timestamp = DateTime.Now,
+            isRead = true
+        };
+
+        if (!friendChatHistory.ContainsKey(friendId))
+        {
+            friendChatHistory[friendId] = new List<FriendChatMessage>();
+        }
+
+        friendChatHistory[friendId].Add(chatMessage);
+        SaveChatHistory();
+
+        if (OnFriendMessageReceived != null)
+        {
+            OnFriendMessageReceived(chatMessage);
+        }
+
+        Debug.Log($"发送消息给 {GetFriend(friendId)?.playerName}: {message}");
+    }
+
+    public void ReceiveMessageFromFriend(string friendId, string senderName, string message)
+    {
+        FriendChatMessage chatMessage = new FriendChatMessage
+        {
+            senderId = friendId,
+            receiverId = "Me",
+            message = message,
+            timestamp = DateTime.Now,
+            isRead = false
+        };
+
+        if (!friendChatHistory.ContainsKey(friendId))
+        {
+            friendChatHistory[friendId] = new List<FriendChatMessage>();
+        }
+
+        friendChatHistory[friendId].Add(chatMessage);
+        SaveChatHistory();
+
+        if (OnFriendMessageReceived != null)
+        {
+            OnFriendMessageReceived(chatMessage);
+        }
+    }
+
+    public List<FriendChatMessage> GetChatHistoryWithFriend(string friendId)
+    {
+        if (friendChatHistory.ContainsKey(friendId))
+        {
+            return new List<FriendChatMessage>(friendChatHistory[friendId]);
+        }
+        return new List<FriendChatMessage>();
+    }
+
+    public void MarkMessagesAsRead(string friendId)
+    {
+        if (friendChatHistory.ContainsKey(friendId))
+        {
+            foreach (var msg in friendChatHistory[friendId])
+            {
+                if (msg.receiverId == "Me")
+                {
+                    msg.isRead = true;
+                }
+            }
+            SaveChatHistory();
+        }
+    }
+
+    public int GetUnreadMessageCount(string friendId)
+    {
+        if (friendChatHistory.ContainsKey(friendId))
+        {
+            return friendChatHistory[friendId].FindAll(m => !m.isRead && m.receiverId == "Me").Count;
+        }
+        return 0;
+    }
+
+    public int GetTotalUnreadCount()
+    {
+        int total = 0;
+        foreach (var kvp in friendChatHistory)
+        {
+            total += GetUnreadMessageCount(kvp.Key);
+        }
+        return total;
+    }
+
+    public void ClearChatHistoryWithFriend(string friendId)
+    {
+        if (friendChatHistory.ContainsKey(friendId))
+        {
+            friendChatHistory[friendId].Clear();
+            SaveChatHistory();
+        }
+    }
+
     // ===== 在线状态 =====
     public void UpdateFriendOnlineStatus(string playerId, bool isOnline)
     {
@@ -121,6 +258,13 @@ public class FriendSystem : MonoBehaviour
             {
                 friend.lastSeen = DateTime.Now;
             }
+
+            if (OnFriendOnlineStatusChanged != null)
+            {
+                OnFriendOnlineStatusChanged(friend);
+            }
+
+            SaveFriends();
         }
     }
 
@@ -145,10 +289,54 @@ public class FriendSystem : MonoBehaviour
         }
     }
 
+    private void SaveChatHistory()
+    {
+        // 转换为可序列化的字典
+        Dictionary<string, string> serializedHistory = new Dictionary<string, string>();
+        foreach (var kvp in friendChatHistory)
+        {
+            string json = JsonUtility.ToJson(new ChatHistorySaveData { messages = kvp.Value });
+            serializedHistory[kvp.Key] = json;
+        }
+
+        // 保存到PlayerPrefs
+        foreach (var kvp in serializedHistory)
+        {
+            PlayerPrefs.SetString($"ChatHistory_{kvp.Key}", kvp.Value);
+        }
+
+        PlayerPrefs.Save();
+    }
+
+    private void LoadChatHistory()
+    {
+        friendChatHistory.Clear();
+
+        foreach (var friend in friends)
+        {
+            string key = $"ChatHistory_{friend.playerId}";
+            if (PlayerPrefs.HasKey(key))
+            {
+                string json = PlayerPrefs.GetString(key);
+                ChatHistorySaveData data = JsonUtility.FromJson<ChatHistorySaveData>(json);
+                if (data != null && data.messages != null)
+                {
+                    friendChatHistory[friend.playerId] = data.messages;
+                }
+            }
+        }
+    }
+
     [Serializable]
     private class FriendSaveData
     {
         public List<FriendInfo> friends;
+    }
+
+    [Serializable]
+    private class ChatHistorySaveData
+    {
+        public List<FriendChatMessage> messages;
     }
 
     // ===== 工具方法 =====
@@ -160,5 +348,13 @@ public class FriendSystem : MonoBehaviour
     public int GetOnlineFriendCount()
     {
         return friends.FindAll(f => f.isOnline).Count;
+    }
+
+    public string FormatFriendChatMessage(FriendChatMessage message)
+    {
+        string time = message.timestamp.ToString("HH:mm:ss");
+        string senderName = message.senderId == "Me" ? "我" : GetFriend(message.senderId)?.playerName ?? "未知";
+        
+        return $"[{time}] {senderName}: {message.message}";
     }
 }
