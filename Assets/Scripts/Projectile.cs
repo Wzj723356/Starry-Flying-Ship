@@ -7,6 +7,8 @@ public class Projectile : MonoBehaviour
     private float range;
     private GameObject owner;
     private float traveledDistance;
+    private GameObject target;
+    private bool isHoming = false;
     
     public void Initialize(float damage, float speed, float range, GameObject owner)
     {
@@ -15,6 +17,12 @@ public class Projectile : MonoBehaviour
         this.range = range;
         this.owner = owner;
         traveledDistance = 0f;
+    }
+    
+    public void SetTarget(GameObject newTarget)
+    {
+        target = newTarget;
+        isHoming = true;
     }
     
     void Update()
@@ -28,6 +36,13 @@ public class Projectile : MonoBehaviour
             return;
         }
         
+        if (isHoming && target != null)
+        {
+            Vector3 toTarget = target.transform.position - transform.position;
+            Quaternion targetRotation = Quaternion.LookRotation(toTarget);
+            transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.deltaTime * 2f);
+        }
+        
         transform.Translate(movement);
         
         RaycastHit hit;
@@ -39,13 +54,6 @@ public class Projectile : MonoBehaviour
     
     void OnHit(RaycastHit hit)
     {
-        Damageable target = hit.collider.GetComponent<Damageable>();
-        
-        if (target != null && target.gameObject != owner)
-        {
-            target.TakeDamage(damage);
-        }
-        
         Destroy(gameObject);
     }
 }
