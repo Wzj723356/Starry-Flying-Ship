@@ -2,65 +2,137 @@ using UnityEngine;
 
 public class SimpleSceneGenerator : MonoBehaviour
 {
+    [Header("生成选项")]
+    public bool generateStars = true;
+    public bool generatePlanets = true;
+    public bool generateAsteroids = true;
+    public bool generatePlayer = true;
+    public bool generateEnemies = true;
+    
     void Awake()
     {
-        // 生成星星
-        GenerateStars();
+        if (generateStars) GenerateStars();
+        if (generatePlanets) GeneratePlanets();
+        if (generateAsteroids) GenerateAsteroids();
+        if (generatePlayer) GeneratePlayer();
+        if (generateEnemies) GenerateEnemies();
         
-        // 生成地面
-        GenerateGround();
-        
-        // 生成飞船
-        GenerateShip();
-        
-        // 生成相机
         GenerateCamera();
+        SetupGameManager();
     }
     
     void GenerateStars()
     {
         GameObject starField = new GameObject("StarField");
-        for (int i = 0; i < 300; i++)
+        for (int i = 0; i < 500; i++)
         {
             GameObject star = new GameObject($"Star_{i}");
             star.transform.parent = starField.transform;
-            Vector3 pos = Random.insideUnitSphere * 500f;
-            pos.y = Mathf.Abs(pos.y);
+            Vector3 pos = Random.insideUnitSphere * 2000f;
             star.transform.position = pos;
             
             Light light = star.AddComponent<Light>();
             light.type = LightType.Point;
-            light.range = Random.Range(5f, 30f);
-            light.intensity = Random.Range(0.1f, 0.5f);
+            light.range = Random.Range(20f, 100f);
+            light.intensity = Random.Range(0.2f, 1f);
             light.color = Random.ColorHSV(0, 1, 0.8f, 1f, 0.8f, 1f);
         }
     }
     
-    void GenerateGround()
+    void GeneratePlanets()
     {
-        GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
-        ground.name = "Ground";
-        ground.transform.localScale = Vector3.one * 50f;
-        
-        Material mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-        mat.color = new Color(0.1f, 0.15f, 0.2f);
-        ground.GetComponent<Renderer>().material = mat;
+        for (int i = 0; i < 5; i++)
+        {
+            GameObject planet = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            planet.name = $"Planet_{i}";
+            
+            float size = Random.Range(50f, 200f);
+            planet.transform.localScale = Vector3.one * size;
+            
+            Vector2 circle = Random.insideUnitCircle.normalized * Random.Range(500f, 1500f);
+            planet.transform.position = new Vector3(circle.x, Random.Range(-100f, 100f), circle.y);
+            
+            Material mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            mat.color = Random.ColorHSV(0, 1, 0.5f, 0.8f, 0.6f, 0.9f);
+            planet.GetComponent<Renderer>().material = mat;
+        }
     }
     
-    void GenerateShip()
+    void GenerateAsteroids()
+    {
+        GameObject belt = new GameObject("AsteroidBelt");
+        for (int i = 0; i < 100; i++)
+        {
+            GameObject asteroid = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            asteroid.name = $"Asteroid_{i}";
+            asteroid.transform.parent = belt.transform;
+            
+            float angle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
+            float radius = 400f + Random.Range(-30f, 30f);
+            
+            asteroid.transform.position = new Vector3(
+                Mathf.Cos(angle) * radius,
+                Random.Range(-10f, 10f),
+                Mathf.Sin(angle) * radius
+            );
+            
+            asteroid.transform.rotation = Random.rotation;
+            asteroid.transform.localScale = Vector3.one * Random.Range(2f, 8f);
+            
+            Material mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            mat.color = new Color(0.4f, 0.35f, 0.3f);
+            asteroid.GetComponent<Renderer>().material = mat;
+        }
+    }
+    
+    void GeneratePlayer()
     {
         GameObject ship = GameObject.CreatePrimitive(PrimitiveType.Cube);
         ship.name = "PlayerShip";
-        ship.transform.position = new Vector3(0, 30f, 0);
+        ship.tag = "Player";
+        ship.transform.position = new Vector3(0, 50f, 0);
         ship.transform.localScale = new Vector3(2f, 1f, 6f);
         
-        // 添加物理飞行控制
-        ship.AddComponent<SimpleFlightTest>();
+        // 飞行控制
+        ship.AddComponent<StarShipFlightController>();
         
-        // 添加材质
+        // 武器系统
+        ship.AddComponent<WeaponSystem>();
+        
+        // 干扰弹
+        ship.AddComponent<CountermeasureSystem>();
+        
+        // 目标系统
+        ship.AddComponent<TargetingSystem>();
+        
+        // 可损坏
+        ship.AddComponent<Damageable>();
+        
+        // 材质
         Material shipMat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
         shipMat.color = new Color(0.2f, 0.6f, 1f);
         ship.GetComponent<Renderer>().material = shipMat;
+    }
+    
+    void GenerateEnemies()
+    {
+        for (int i = 0; i < 3; i++)
+        {
+            GameObject enemy = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            enemy.name = $"Enemy_{i}";
+            enemy.tag = "Enemy";
+            
+            Vector2 circle = Random.insideUnitCircle.normalized * Random.Range(200f, 400f);
+            enemy.transform.position = new Vector3(circle.x, 50f, circle.y);
+            enemy.transform.localScale = new Vector3(2f, 1f, 5f);
+            
+            enemy.AddComponent<EnemyAIController>();
+            enemy.AddComponent<Damageable>();
+            
+            Material enemyMat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            enemyMat.color = new Color(1f, 0.2f, 0.2f);
+            enemy.GetComponent<Renderer>().material = enemyMat;
+        }
     }
     
     void GenerateCamera()
@@ -73,12 +145,20 @@ public class SimpleSceneGenerator : MonoBehaviour
             mainCam.tag = "MainCamera";
         }
         
-        mainCam.transform.position = new Vector3(0, 25f, -40f);
-        mainCam.transform.LookAt(Vector3.zero);
+        mainCam.transform.position = new Vector3(0, 70f, -80f);
         
-        // 添加相机跟随
         CameraFollow follow = mainCam.gameObject.AddComponent<CameraFollow>();
         follow.target = GameObject.Find("PlayerShip")?.transform;
-        follow.offset = new Vector3(0, 15f, -25f);
+        follow.offset = new Vector3(0, 20f, -30f);
+    }
+    
+    void SetupGameManager()
+    {
+        GameObject manager = new GameObject("GameManager");
+        manager.AddComponent<GameManager>();
+        manager.AddComponent<MissionManager>();
+        manager.AddComponent<NetworkManager>();
+        manager.AddComponent<ChatSystem>();
+        manager.AddComponent<FriendSystem>();
     }
 }
