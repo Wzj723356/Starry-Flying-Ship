@@ -372,4 +372,15 @@ public class HUDManager : MonoBehaviour
     {
         missiles.Remove(missile);
     }
+    
+    public void SetMissileIncoming(bool incoming, float distance = 0)
+    {
+        isMissileWarning = incoming;
+        missileDistance = distance;
+    }
+    
+    public void SetLockedByEnemy(bool locked)
+    {
+        isLocked = locked;
+    }
 }
