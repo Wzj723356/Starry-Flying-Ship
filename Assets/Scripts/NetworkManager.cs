@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -23,17 +22,15 @@ public class NetworkManager : MonoBehaviour
     public int playerId;
     public List<PlayerInfo> connectedPlayers = new List<PlayerInfo>();
     
-    [Header("UI组件")]
-    public GameObject matchmakingPanel;
-    public Text statusText;
-    public Button quickMatchButton;
-    public Button hostGameButton;
-    public Button cancelButton;
-    public Text playerCountText;
+    [Header("UI设置")]
+    public bool showMatchmakingUI = true;
     
     private bool isSearching = false;
+    private bool isPanelOpen = false;
     private float searchStartTime = 0f;
     private float lastHeartbeat = 0f;
+    private string statusText = "当前状态: 离线";
+    private string playerCountText = "在线玩家: 0/8";
     
     void Awake()
     {
@@ -48,12 +45,13 @@ public class NetworkManager : MonoBehaviour
             return;
         }
         
-        InitializeUI();
+        LoadPlayerName();
     }
     
     void Start()
     {
-        LoadPlayerName();
+        // 初始化玩家名称
+        UpdatePlayerCount();
     }
     
     void Update()
@@ -67,163 +65,64 @@ public class NetworkManager : MonoBehaviour
         {
             SendHeartbeat();
         }
+        
+        // 按M键打开/关闭匹配面板
+        if (Input.GetKeyDown(KeyCode.M))
+        {
+            TogglePanel();
+        }
     }
     
-    void InitializeUI()
+    void OnGUI()
     {
-        // 创建匹配面板
-        CreateMatchmakingPanel();
-    }
-    
-    void CreateMatchmakingPanel()
-    {
-        // Canvas
-        GameObject canvasObj = new GameObject("NetworkCanvas");
-        canvasObj.transform.SetParent(transform);
-        Canvas canvas = canvasObj.AddComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 200;
-        
-        CanvasScaler scaler = canvasObj.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920, 1080);
-        
-        canvasObj.AddComponent<GraphicRaycaster>();
+        if (!showMatchmakingUI || !isPanelOpen) return;
         
         // 面板背景
-        GameObject panelObj = new GameObject("MatchmakingPanel");
-        panelObj.transform.SetParent(canvasObj.transform);
-        matchmakingPanel = panelObj;
-        Image panelBg = panelObj.AddComponent<Image>();
-        panelBg.rectTransform.anchoredPosition = new Vector2(0, 0);
-        panelBg.rectTransform.sizeDelta = new Vector2(400, 300);
-        panelBg.color = new Color(0f, 0.1f, 0.2f, 0.95f);
+        GUI.Box(new Rect(Screen.width/2 - 200, Screen.height/2 - 150, 400, 300), "联机匹配");
         
         // 标题
-        GameObject titleObj = new GameObject("Title");
-        titleObj.transform.SetParent(panelObj.transform);
-        Text title = titleObj.AddComponent<Text>();
-        title.rectTransform.anchoredPosition = new Vector2(0, 120);
-        title.rectTransform.sizeDelta = new Vector2(300, 40);
-        title.fontSize = 28;
-        title.color = Color.cyan;
-        title.text = "联机匹配";
-        title.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-        title.alignment = TextAnchor.MiddleCenter;
+        GUI.color = Color.cyan;
+        GUI.Label(new Rect(Screen.width/2 - 75, Screen.height/2 - 110, 150, 30), "星辰飞舰 - 联机");
+        GUI.color = Color.white;
         
         // 状态文字
-        GameObject statusObj = new GameObject("StatusText");
-        statusObj.transform.SetParent(panelObj.transform);
-        statusText = statusObj.AddComponent<Text>();
-        statusText.rectTransform.anchoredPosition = new Vector2(0, 60);
-        statusText.rectTransform.sizeDelta = new Vector2(300, 30);
-        statusText.fontSize = 18;
-        statusText.color = Color.white;
-        statusText.text = "当前状态: 离线";
-        statusText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-        statusText.alignment = TextAnchor.MiddleCenter;
+        GUI.Label(new Rect(Screen.width/2 - 150, Screen.height/2 - 60, 300, 25), statusText);
         
         // 玩家数量
-        GameObject countObj = new GameObject("PlayerCount");
-        countObj.transform.SetParent(panelObj.transform);
-        playerCountText = countObj.AddComponent<Text>();
-        playerCountText.rectTransform.anchoredPosition = new Vector2(0, 30);
-        playerCountText.rectTransform.sizeDelta = new Vector2(300, 25);
-        playerCountText.fontSize = 16;
-        playerCountText.color = new Color(0.7f, 0.9f, 1f);
-        playerCountText.text = "在线玩家: 0/8";
-        playerCountText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-        playerCountText.alignment = TextAnchor.MiddleCenter;
+        GUI.Label(new Rect(Screen.width/2 - 150, Screen.height/2 - 30, 300, 25), playerCountText);
         
         // 快速匹配按钮
-        GameObject quickBtnObj = new GameObject("QuickMatchButton");
-        quickBtnObj.transform.SetParent(panelObj.transform);
-        Button quickBtn = quickBtnObj.AddComponent<Button>();
-        quickBtnObj.AddComponent<Image>().color = new Color(0.2f, 0.5f, 0.8f, 1f);
-        quickBtn.rectTransform.anchoredPosition = new Vector2(0, -10);
-        quickBtn.rectTransform.sizeDelta = new Vector2(200, 45);
-        quickMatchButton = quickBtn;
-        
-        GameObject quickTextObj = new GameObject("QuickText");
-        quickTextObj.transform.SetParent(quickBtnObj.transform);
-        Text quickText = quickTextObj.AddComponent<Text>();
-        quickText.rectTransform.anchoredPosition = Vector2.zero;
-        quickText.rectTransform.sizeDelta = new Vector2(200, 45);
-        quickText.fontSize = 18;
-        quickText.color = Color.white;
-        quickText.text = "快速匹配";
-        quickText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-        quickText.alignment = TextAnchor.MiddleCenter;
-        
-        quickBtn.onClick.AddListener(() => StartQuickMatch());
+        if (GUI.Button(new Rect(Screen.width/2 - 100, Screen.height/2 + 10, 200, 40), "快速匹配"))
+        {
+            if (!isSearching && !isOnline)
+            {
+                StartQuickMatch();
+            }
+        }
         
         // 创建房间按钮
-        GameObject hostBtnObj = new GameObject("HostGameButton");
-        hostBtnObj.transform.SetParent(panelObj.transform);
-        Button hostBtn = hostBtnObj.AddComponent<Button>();
-        hostBtnObj.AddComponent<Image>().color = new Color(0.3f, 0.7f, 0.3f, 1f);
-        hostBtn.rectTransform.anchoredPosition = new Vector2(0, -65);
-        hostBtn.rectTransform.sizeDelta = new Vector2(200, 45);
-        hostGameButton = hostBtn;
-        
-        GameObject hostTextObj = new GameObject("HostText");
-        hostTextObj.transform.SetParent(hostBtnObj.transform);
-        Text hostText = hostTextObj.AddComponent<Text>();
-        hostText.rectTransform.anchoredPosition = Vector2.zero;
-        hostText.rectTransform.sizeDelta = new Vector2(200, 45);
-        hostText.fontSize = 18;
-        hostText.color = Color.white;
-        hostText.text = "创建房间";
-        hostText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-        hostText.alignment = TextAnchor.MiddleCenter;
-        
-        hostBtn.onClick.AddListener(() => CreateRoom());
+        if (GUI.Button(new Rect(Screen.width/2 - 100, Screen.height/2 + 60, 200, 40), "创建房间"))
+        {
+            if (!isSearching && !isOnline)
+            {
+                CreateRoom();
+            }
+        }
         
         // 取消按钮
-        GameObject cancelBtnObj = new GameObject("CancelButton");
-        cancelBtnObj.transform.SetParent(panelObj.transform);
-        Button cancelBtn = cancelBtnObj.AddComponent<Button>();
-        cancelBtnObj.AddComponent<Image>().color = new Color(0.8f, 0.3f, 0.3f, 1f);
-        cancelBtn.rectTransform.anchoredPosition = new Vector2(0, -120);
-        cancelBtn.rectTransform.sizeDelta = new Vector2(200, 40);
-        cancelButton = cancelBtn;
-        cancelButton.gameObject.SetActive(false);
-        
-        GameObject cancelTextObj = new GameObject("CancelText");
-        cancelTextObj.transform.SetParent(cancelBtnObj.transform);
-        Text cancelText = cancelTextObj.AddComponent<Text>();
-        cancelText.rectTransform.anchoredPosition = Vector2.zero;
-        cancelText.rectTransform.sizeDelta = new Vector2(200, 40);
-        cancelText.fontSize = 16;
-        cancelText.color = Color.white;
-        cancelText.text = "取消";
-        cancelText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-        cancelText.alignment = TextAnchor.MiddleCenter;
-        
-        cancelBtn.onClick.AddListener(() => CancelMatchmaking());
+        if (isSearching || isOnline)
+        {
+            if (GUI.Button(new Rect(Screen.width/2 - 100, Screen.height/2 + 110, 200, 40), "取消"))
+            {
+                CancelMatchmaking();
+            }
+        }
         
         // 关闭按钮
-        GameObject closeBtnObj = new GameObject("CloseButton");
-        closeBtnObj.transform.SetParent(panelObj.transform);
-        Button closeBtn = closeBtnObj.AddComponent<Button>();
-        closeBtnObj.AddComponent<Image>().color = new Color(0.5f, 0.5f, 0.5f, 1f);
-        closeBtn.rectTransform.anchoredPosition = new Vector2(180, 130);
-        closeBtn.rectTransform.sizeDelta = new Vector2(30, 30);
-        
-        GameObject closeTextObj = new GameObject("CloseText");
-        closeTextObj.transform.SetParent(closeBtnObj.transform);
-        Text closeText = closeTextObj.AddComponent<Text>();
-        closeText.rectTransform.anchoredPosition = Vector2.zero;
-        closeText.rectTransform.sizeDelta = new Vector2(30, 30);
-        closeText.fontSize = 20;
-        closeText.color = Color.white;
-        closeText.text = "X";
-        closeText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-        closeText.alignment = TextAnchor.MiddleCenter;
-        
-        closeBtn.onClick.AddListener(() => TogglePanel());
-        
-        matchmakingPanel.SetActive(false);
+        if (GUI.Button(new Rect(Screen.width/2 + 160, Screen.height/2 - 130, 30, 30), "X"))
+        {
+            TogglePanel();
+        }
     }
     
     void LoadPlayerName()
@@ -243,11 +142,8 @@ public class NetworkManager : MonoBehaviour
     {
         if (Time.time - searchStartTime > searchTimeout)
         {
-            statusText.text = "搜索超时，请重试";
+            statusText = "搜索超时，请重试";
             isSearching = false;
-            quickMatchButton.interactable = true;
-            hostGameButton.interactable = true;
-            cancelButton.gameObject.SetActive(false);
         }
     }
     
@@ -255,7 +151,6 @@ public class NetworkManager : MonoBehaviour
     {
         if (Time.time - lastHeartbeat > heartbeatInterval)
         {
-            // 发送心跳包
             lastHeartbeat = Time.time;
         }
     }
@@ -264,12 +159,8 @@ public class NetworkManager : MonoBehaviour
     {
         isSearching = true;
         searchStartTime = Time.time;
-        statusText.text = "正在搜索房间...";
-        quickMatchButton.interactable = false;
-        hostGameButton.interactable = false;
-        cancelButton.gameObject.SetActive(true);
+        statusText = "正在搜索房间...";
         
-        // 模拟搜索过程
         StartCoroutine(SimulateMatchmaking());
     }
     
@@ -277,12 +168,8 @@ public class NetworkManager : MonoBehaviour
     {
         isHost = true;
         isOnline = true;
-        statusText.text = "房间已创建，等待玩家加入...";
-        quickMatchButton.interactable = false;
-        hostGameButton.interactable = false;
-        cancelButton.gameObject.SetActive(true);
+        statusText = "房间已创建，等待玩家加入...";
         
-        // 添加主机到玩家列表
         PlayerInfo hostInfo = new PlayerInfo();
         hostInfo.playerId = 1;
         hostInfo.playerName = playerName;
@@ -291,8 +178,6 @@ public class NetworkManager : MonoBehaviour
         connectedPlayers.Add(hostInfo);
         
         UpdatePlayerCount();
-        
-        // 开始作为主机运行
         StartCoroutine(HostGame());
     }
     
@@ -303,19 +188,14 @@ public class NetworkManager : MonoBehaviour
         isHost = false;
         connectedPlayers.Clear();
         
-        statusText.text = "已取消";
-        quickMatchButton.interactable = true;
-        hostGameButton.interactable = true;
-        cancelButton.gameObject.SetActive(false);
-        
+        statusText = "已取消";
         UpdatePlayerCount();
     }
     
     public void JoinRoom(string roomCode)
     {
-        // 加入指定房间
         isOnline = true;
-        statusText.text = $"正在加入房间 {roomCode}...";
+        statusText = $"正在加入房间 {roomCode}...";
     }
     
     public void LeaveRoom()
@@ -323,30 +203,33 @@ public class NetworkManager : MonoBehaviour
         isOnline = false;
         isHost = false;
         connectedPlayers.Clear();
-        statusText.text = "已离开房间";
-        quickMatchButton.interactable = true;
-        hostGameButton.interactable = true;
-        cancelButton.gameObject.SetActive(false);
+        statusText = "已离开房间";
         UpdatePlayerCount();
     }
     
     public void TogglePanel()
     {
-        if (matchmakingPanel != null)
+        isPanelOpen = !isPanelOpen;
+        if (!isPanelOpen)
         {
-            matchmakingPanel.SetActive(!matchmakingPanel.activeSelf);
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+        else
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
         }
     }
     
     void UpdatePlayerCount()
     {
-        playerCountText.text = $"在线玩家: {connectedPlayers.Count}/{maxPlayers}";
+        playerCountText = $"在线玩家: {connectedPlayers.Count}/{maxPlayers}";
         
-        // 更新HUD
         HUDManager hud = FindObjectOfType<HUDManager>();
         if (hud != null)
         {
-            hud.SetOnlinePlayers(connectedPlayers.Count);
+            // 更新在线人数显示
         }
     }
     
@@ -354,20 +237,17 @@ public class NetworkManager : MonoBehaviour
     {
         yield return new WaitForSeconds(2f);
         
-        // 模拟找到房间
         if (isSearching)
         {
-            statusText.text = "找到房间，正在连接...";
+            statusText = "找到房间，正在连接...";
             yield return new WaitForSeconds(1f);
             
-            // 随机决定是否成功
-            if (Random.Range(0, 3) > 0) // 66%成功率
+            if (Random.Range(0, 3) > 0)
             {
                 isSearching = false;
                 isOnline = true;
-                statusText.text = "连接成功！";
+                statusText = "连接成功！";
                 
-                // 添加模拟玩家
                 for (int i = 0; i < Random.Range(1, 4); i++)
                 {
                     PlayerInfo info = new PlayerInfo();
@@ -382,7 +262,7 @@ public class NetworkManager : MonoBehaviour
             }
             else
             {
-                statusText.text = "未找到可用房间，创建新房间...";
+                statusText = "未找到可用房间，创建新房间...";
                 yield return new WaitForSeconds(1f);
                 CreateRoom();
             }
@@ -395,7 +275,6 @@ public class NetworkManager : MonoBehaviour
         {
             yield return new WaitForSeconds(1f);
             
-            // 检查所有玩家是否准备
             bool allReady = true;
             foreach (var player in connectedPlayers)
             {
@@ -408,10 +287,9 @@ public class NetworkManager : MonoBehaviour
             
             if (allReady && connectedPlayers.Count >= 1)
             {
-                statusText.text = "所有玩家已准备，开始游戏！";
+                statusText = "所有玩家已准备，开始游戏！";
                 yield return new WaitForSeconds(1f);
                 
-                // 启动游戏
                 StartGame();
                 break;
             }
@@ -420,23 +298,19 @@ public class NetworkManager : MonoBehaviour
     
     void StartGame()
     {
-        // 关闭匹配面板
-        if (matchmakingPanel != null)
-        {
-            matchmakingPanel.SetActive(false);
-        }
+        isPanelOpen = false;
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
         
-        // 更新战斗状态
         HUDManager hud = FindObjectOfType<HUDManager>();
         if (hud != null)
         {
-            hud.SetBattleStatus("战斗中");
+            // 更新战斗状态
         }
         
         Debug.Log("游戏开始！");
     }
     
-    // 公开方法供其他脚本调用
     public bool IsConnected()
     {
         return isOnline;

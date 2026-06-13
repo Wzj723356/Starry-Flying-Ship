@@ -1,496 +1,317 @@
 using UnityEngine;
-using UnityEngine.UI;
 using System.Collections.Generic;
 
 public class HUDManager : MonoBehaviour
 {
-    [Header("HUD Canvas")]
-    public Canvas hudCanvas;
-    
     [Header("瞄准系统")]
-    public Image aimingReticle;      // 准星（屏幕中心固定）
-    public Image aimingRing;        // 瞄准环（跟随鼠标）
-    public Text speedText;          // 速度显示
-    public Text altitudeText;        // 高度显示
+    public bool showAimReticle = true;
+    public Color reticleColor = Color.cyan;
     
     [Header("雷达系统")]
-    public Image frontRadar;         // 前方雷达（100km）
-    public Image sideRadar;          // 侧面雷达（60km）
-    public Text frontRadarText;      // 前方雷达标签
-    public Text sideRadarText;       // 侧面雷达标签
-    
-    [Header("飞船状态")]
-    public Image shipModelDisplay;   // 飞船小模型
-    public Image[] partStatus;       // 部件状态指示器
-    public Text[] partStatusTexts;   // 部件状态文字
-    public Slider hullHealthBar;     // 船体血条
-    public Slider enginePowerBar;    // 引擎功率条
+    public bool showRadar = true;
+    public float frontRadarRange = 100000f; // 100km
+    public float sideRadarRange = 60000f;   // 60km
+    public float rearMissileRange = 40000f; // 40km
     
     [Header("警告系统")]
-    public Image lockWarning;        // 锁定警告（红色圆点）
-    public Image missileWarning;     // 导弹来袭警告
-    public Text missileWarningText;  // 导弹警告文字
-    public Image[] warningIndicators;// 警告指示器
+    public bool showWarnings = true;
+    public float warningFlashInterval = 0.2f;
     
     [Header("操作台状态")]
-    public Text onlinePlayersText;   // 在线人数
-    public Text shipStatusText;      // 飞船状态
-    public Text battleStatusText;     // 战斗状态
-    public Text weaponStatusText;     // 武器状态
+    public bool showStatus = true;
     
-    [Header("颜色配置")]
-    public Color normalColor = Color.white;
-    public Color warningColor = Color.yellow;
-    public Color criticalColor = Color.red;
-    public Color radarFriendlyColor = Color.cyan;
-    public Color radarEnemyColor = Color.red;
-    public Color radarMissileColor = Color.magenta;
-    
+    private Transform playerShip;
     private List<Transform> enemiesOnRadar = new List<Transform>();
     private List<Transform> missiles = new List<Transform>();
+    private float warningTimer = 0f;
     private bool isLocked = false;
-    private float warningFlashSpeed = 5f;
+    private bool isMissileWarning = false;
+    private float missileDistance = 0f;
     
     void Start()
     {
-        InitializeHUD();
+        playerShip = GameObject.FindGameObjectWithTag("Player")?.transform;
     }
     
     void Update()
     {
-        UpdateFlightInfo();
-        UpdateRadar();
-        UpdateWarnings();
-        UpdateShipStatus();
+        warningTimer += Time.deltaTime;
+        
+        // 检测敌人和导弹
+        DetectEnemiesAndMissiles();
     }
     
-    void InitializeHUD()
+    void DetectEnemiesAndMissiles()
     {
-        // 创建Canvas
-        CreateCanvas();
+        enemiesOnRadar.Clear();
+        missiles.Clear();
         
-        // 创建瞄准系统
-        CreateAimingSystem();
+        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+        GameObject[] missileObjects = GameObject.FindGameObjectsWithTag("Missile");
         
-        // 创建雷达系统
-        CreateRadarSystem();
+        foreach (GameObject enemy in enemies)
+        {
+            if (playerShip != null)
+            {
+                Vector3 toEnemy = enemy.transform.position - playerShip.position;
+                float distance = toEnemy.magnitude;
+                
+                // 前方100km雷达
+                float forwardDot = Vector3.Dot(playerShip.forward, toEnemy.normalized);
+                if (forwardDot > 0 && distance < frontRadarRange)
+                {
+                    enemiesOnRadar.Add(enemy.transform);
+                }
+                // 侧面60km雷达
+                else if (Mathf.Abs(forwardDot) < 0.707f && distance < sideRadarRange)
+                {
+                    enemiesOnRadar.Add(enemy.transform);
+                }
+            }
+        }
         
-        // 创建飞船状态显示
-        CreateShipStatusDisplay();
+        foreach (GameObject missile in missileObjects)
+        {
+            if (playerShip != null)
+            {
+                Vector3 toMissile = missile.transform.position - playerShip.position;
+                float distance = toMissile.magnitude;
+                
+                missiles.Add(missile.transform);
+                
+                // 后方导弹检测
+                float forwardDot = Vector3.Dot(playerShip.forward, toMissile.normalized);
+                if (forwardDot < 0 && distance < rearMissileRange)
+                {
+                    isMissileWarning = true;
+                    missileDistance = distance;
+                }
+            }
+        }
         
-        // 创建警告系统
-        CreateWarningSystem();
-        
-        // 创建操作台状态
-        CreateOperationPanel();
+        // 锁定检测（简化版本）
+        isLocked = enemiesOnRadar.Count > 0 && Random.value > 0.7f;
     }
     
-    void CreateCanvas()
+    void OnGUI()
     {
-        GameObject canvasObj = new GameObject("HUDCanvas");
-        canvasObj.transform.SetParent(transform);
-        hudCanvas = canvasObj.AddComponent<Canvas>();
-        hudCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        hudCanvas.sortingOrder = 100;
+        if (!showStatus) return;
         
-        CanvasScaler scaler = canvasObj.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920, 1080);
-        scaler.matchWidthOrHeight = 0.5f;
+        // 速度显示
+        if (playerShip != null)
+        {
+            float speed = playerShip.GetComponent<Rigidbody>()?.velocity.magnitude ?? 0;
+            GUI.Label(new Rect(10, 10, 200, 20), $"速度: {speed:F1} m/s");
+            
+            // 高度显示
+            GUI.Label(new Rect(10, 30, 200, 20), $"高度: {playerShip.position.y:F1} m");
+        }
         
-        canvasObj.AddComponent<GraphicRaycaster>();
-    }
-    
-    void CreateAimingSystem()
-    {
-        // 准星（屏幕中心）
-        aimingReticle = CreateImage("AimingReticle");
-        aimingReticle.rectTransform.anchoredPosition = Vector2.zero;
-        aimingReticle.rectTransform.sizeDelta = new Vector2(40, 40);
-        aimingReticle.color = Color.cyan;
-        aimingReticle.sprite = CreateCircleSprite();
-        
-        // 瞄准环（跟随鼠标）
-        aimingRing = CreateImage("AimingRing");
-        aimingRing.rectTransform.sizeDelta = new Vector2(150, 150);
-        aimingRing.color = new Color(0.3f, 0.8f, 1f, 0.8f);
-        aimingRing.sprite = CreateRingSprite();
-        
-        // 速度文字
-        speedText = CreateText("SpeedText");
-        speedText.rectTransform.anchoredPosition = new Vector2(0, -50);
-        speedText.fontSize = 24;
-        speedText.color = Color.white;
-        speedText.text = "SPD: 0 m/s";
-        
-        // 高度文字
-        altitudeText = CreateText("AltitudeText");
-        altitudeText.rectTransform.anchoredPosition = new Vector2(0, -80);
-        altitudeText.fontSize = 20;
-        altitudeText.color = new Color(0.7f, 0.9f, 1f);
-        altitudeText.text = "ALT: 0 m";
-    }
-    
-    void CreateRadarSystem()
-    {
-        // 前方雷达（右上角）- 100km
-        GameObject frontRadarObj = new GameObject("FrontRadar");
-        frontRadarObj.transform.SetParent(hudCanvas.transform);
-        frontRadar = frontRadarObj.AddComponent<Image>();
-        frontRadar.rectTransform.anchorMax = new Vector2(1, 1);
-        frontRadar.rectTransform.anchorMin = new Vector2(1, 1);
-        frontRadar.rectTransform.anchoredPosition = new Vector2(-120, -80);
-        frontRadar.rectTransform.sizeDelta = new Vector2(120, 120);
-        frontRadar.color = new Color(0.1f, 0.3f, 0.5f, 0.7f);
-        frontRadar.sprite = CreateRadarSprite();
-        
-        frontRadarText = CreateText("FrontRadarText");
-        frontRadarText.rectTransform.SetParent(frontRadarObj.transform);
-        frontRadarText.rectTransform.anchoredPosition = new Vector2(0, -70);
-        frontRadarText.fontSize = 14;
-        frontRadarText.color = new Color(0.5f, 0.8f, 1f);
-        frontRadarText.text = "前方 100km";
-        
-        // 侧面雷达（左上角）- 60km
-        GameObject sideRadarObj = new GameObject("SideRadar");
-        sideRadarObj.transform.SetParent(hudCanvas.transform);
-        sideRadar = sideRadarObj.AddComponent<Image>();
-        sideRadar.rectTransform.anchorMax = new Vector2(0, 1);
-        sideRadar.rectTransform.anchorMin = new Vector2(0, 1);
-        sideRadar.rectTransform.anchoredPosition = new Vector2(120, -80);
-        sideRadar.rectTransform.sizeDelta = new Vector2(100, 100);
-        sideRadar.color = new Color(0.1f, 0.3f, 0.5f, 0.7f);
-        sideRadar.sprite = CreateRadarSprite();
-        
-        sideRadarText = CreateText("SideRadarText");
-        sideRadarText.rectTransform.SetParent(sideRadarObj.transform);
-        sideRadarText.rectTransform.anchoredPosition = new Vector2(0, -60);
-        sideRadarText.fontSize = 12;
-        sideRadarText.color = new Color(0.5f, 0.8f, 1f);
-        sideRadarText.text = "侧面 60km";
-    }
-    
-    void CreateShipStatusDisplay()
-    {
-        // 飞船小模型背景（左下角）
-        GameObject modelBg = new GameObject("ShipModelDisplay");
-        modelBg.transform.SetParent(hudCanvas.transform);
-        Image modelBgImg = modelBg.AddComponent<Image>();
-        modelBgImg.rectTransform.anchorMax = new Vector2(0, 0);
-        modelBgImg.rectTransform.anchorMin = new Vector2(0, 0);
-        modelBgImg.rectTransform.anchoredPosition = new Vector2(100, 80);
-        modelBgImg.rectTransform.sizeDelta = new Vector2(150, 120);
-        modelBgImg.color = new Color(0f, 0.2f, 0.3f, 0.5f);
-        
-        // 飞船小模型
-        shipModelDisplay = CreateImage("ShipModel");
-        shipModelDisplay.transform.SetParent(modelBg.transform);
-        shipModelDisplay.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
-        shipModelDisplay.rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
-        shipModelDisplay.rectTransform.anchoredPosition = Vector2.zero;
-        shipModelDisplay.rectTransform.sizeDelta = new Vector2(80, 40);
-        shipModelDisplay.color = new Color(0.3f, 0.7f, 1f, 0.9f);
-        
-        // 船体血条
-        GameObject healthBarBg = new GameObject("HealthBarBg");
-        healthBarBg.transform.SetParent(modelBg.transform);
-        Image healthBg = healthBarBg.AddComponent<Image>();
-        healthBg.rectTransform.anchoredPosition = new Vector2(0, -40);
-        healthBg.rectTransform.sizeDelta = new Vector2(120, 15);
-        healthBg.color = new Color(0.3f, 0.3f, 0.3f, 0.7f);
-        
-        hullHealthBar = CreateSlider("HealthBar");
-        hullHealthBar.transform.SetParent(healthBarBg.transform);
-        hullHealthBar.rectTransform.anchoredPosition = Vector2.zero;
-        hullHealthBar.fillRect.GetComponent<Image>().color = Color.green;
-        
-        // 引擎功率条
-        GameObject engineBarBg = new GameObject("EngineBarBg");
-        engineBarBg.transform.SetParent(modelBg.transform);
-        Image engineBg = engineBarBg.AddComponent<Image>();
-        engineBg.rectTransform.anchoredPosition = new Vector2(0, -55);
-        engineBg.rectTransform.sizeDelta = new Vector2(100, 10);
-        engineBg.color = new Color(0.3f, 0.3f, 0.3f, 0.7f);
-        
-        enginePowerBar = CreateSlider("EngineBar");
-        enginePowerBar.transform.SetParent(engineBarBg.transform);
-        enginePowerBar.rectTransform.anchoredPosition = Vector2.zero;
-        enginePowerBar.fillRect.GetComponent<Image>().color = Color.cyan;
-    }
-    
-    void CreateWarningSystem()
-    {
-        // 锁定警告（红色圆点闪烁）
-        lockWarning = CreateImage("LockWarning");
-        lockWarning.rectTransform.anchorMax = new Vector2(0.5f, 1);
-        lockWarning.rectTransform.anchorMin = new Vector2(0.5f, 1);
-        lockWarning.rectTransform.anchoredPosition = new Vector2(0, -20);
-        lockWarning.rectTransform.sizeDelta = new Vector2(30, 30);
-        lockWarning.color = Color.red;
-        lockWarning.enabled = false;
-        
-        // 导弹来袭警告
-        missileWarning = CreateImage("MissileWarning");
-        missileWarning.rectTransform.anchoredPosition = new Vector2(0, 100);
-        missileWarning.rectTransform.sizeDelta = new Vector2(60, 60);
-        missileWarning.color = new Color(1f, 0.3f, 0f, 0.8f);
-        missileWarning.enabled = false;
-        
-        missileWarningText = CreateText("MissileWarningText");
-        missileWarningText.rectTransform.anchoredPosition = new Vector2(0, 130);
-        missileWarningText.fontSize = 18;
-        missileWarningText.color = Color.red;
-        missileWarningText.text = "导弹来袭！";
-        missileWarningText.enabled = false;
-    }
-    
-    void CreateOperationPanel()
-    {
-        // 操作台状态面板（右下角）
-        GameObject panelBg = new GameObject("OperationPanel");
-        panelBg.transform.SetParent(hudCanvas.transform);
-        Image panelImg = panelBg.AddComponent<Image>();
-        panelImg.rectTransform.anchorMax = new Vector2(1, 0);
-        panelImg.rectTransform.anchorMin = new Vector2(1, 0);
-        panelImg.rectTransform.anchoredPosition = new Vector2(-120, 100);
-        panelImg.rectTransform.sizeDelta = new Vector2(200, 150);
-        panelImg.color = new Color(0f, 0.15f, 0.25f, 0.7f);
-        
-        // 在线人数
-        onlinePlayersText = CreateText("OnlinePlayers");
-        onlinePlayersText.rectTransform.SetParent(panelBg.transform);
-        onlinePlayersText.rectTransform.anchoredPosition = new Vector2(0, 55);
-        onlinePlayersText.fontSize = 16;
-        onlinePlayersText.color = Color.cyan;
-        onlinePlayersText.text = "在线: 0人";
+        // 在线人数（模拟）
+        GUI.Label(new Rect(Screen.width - 150, 10, 150, 20), "在线: 16/32");
         
         // 飞船状态
-        shipStatusText = CreateText("ShipStatus");
-        shipStatusText.rectTransform.SetParent(panelBg.transform);
-        shipStatusText.rectTransform.anchoredPosition = new Vector2(0, 25);
-        shipStatusText.fontSize = 14;
-        shipStatusText.color = Color.white;
-        shipStatusText.text = "飞船: 正常";
+        GUI.Label(new Rect(Screen.width - 150, 30, 150, 20), "状态: 正常");
         
         // 战斗状态
-        battleStatusText = CreateText("BattleStatus");
-        battleStatusText.rectTransform.SetParent(panelBg.transform);
-        battleStatusText.rectTransform.anchoredPosition = new Vector2(0, -5);
-        battleStatusText.fontSize = 14;
-        battleStatusText.color = new Color(1f, 0.8f, 0f);
-        battleStatusText.text = "战斗状态: 待机";
+        GUI.Label(new Rect(Screen.width - 150, 50, 150, 20), "战斗: 进行中");
         
-        // 武器状态
-        weaponStatusText = CreateText("WeaponStatus");
-        weaponStatusText.rectTransform.SetParent(panelBg.transform);
-        weaponStatusText.rectTransform.anchoredPosition = new Vector2(0, -35);
-        weaponStatusText.fontSize = 12;
-        weaponStatusText.color = Color.green;
-        weaponStatusText.text = "激光炮: 就绪";
-    }
-    
-    void UpdateFlightInfo()
-    {
-        Rigidbody rb = GameObject.FindGameObjectWithTag("Player")?.GetComponent<Rigidbody>();
-        if (rb != null)
+        // 锁定警告
+        if (showWarnings && isLocked)
         {
-            float speed = rb.velocity.magnitude;
-            float altitude = rb.position.y;
-            
-            speedText.text = $"SPD: {speed:F0} m/s";
-            altitudeText.text = $"ALT: {altitude:F0} m";
-            
-            // 更新引擎功率条
-            float throttle = speed / 400f; // 假设最大速度400
-            enginePowerBar.value = throttle;
-        }
-    }
-    
-    void UpdateRadar()
-    {
-        // 更新雷达上的敌人标记
-        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
-        // 简化的雷达更新逻辑
-    }
-    
-    void UpdateWarnings()
-    {
-        // 锁定警告闪烁
-        if (isLocked)
-        {
-            float flash = Mathf.Sin(Time.time * warningFlashSpeed) * 0.5f + 0.5f;
-            lockWarning.color = new Color(1f, 0f, 0f, flash);
-            lockWarning.enabled = true;
-        }
-        else
-        {
-            lockWarning.enabled = false;
+            bool flash = Mathf.Floor(warningTimer / warningFlashInterval) % 2 == 0;
+            if (flash)
+            {
+                GUI.color = Color.red;
+                GUI.Label(new Rect(Screen.width / 2 - 50, Screen.height / 2 - 80, 100, 30), "⚠️ 被锁定！");
+                GUI.color = Color.white;
+            }
         }
         
         // 导弹来袭警告
-        if (missiles.Count > 0)
+        if (showWarnings && isMissileWarning)
         {
-            missileWarning.enabled = true;
-            missileWarningText.enabled = true;
-            float flash = Mathf.Sin(Time.time * 10f) * 0.5f + 0.5f;
-            missileWarning.color = new Color(1f, 0.3f, 0f, flash);
+            bool flash = Mathf.Floor(warningTimer / (warningFlashInterval * 0.5f)) % 2 == 0;
+            if (flash)
+            {
+                GUI.color = Color.magenta;
+                GUI.Label(new Rect(Screen.width / 2 - 80, Screen.height - 50, 160, 30), $"🚀 导弹来袭！距离: {missileDistance/1000:F1} km");
+                GUI.color = Color.white;
+            }
         }
-        else
+        
+        // 雷达显示（简化）
+        if (showRadar)
         {
-            missileWarning.enabled = false;
-            missileWarningText.enabled = false;
+            DrawRadar();
+        }
+        
+        // 准星
+        if (showAimReticle)
+        {
+            DrawAimReticle();
         }
     }
     
-    void UpdateShipStatus()
+    void DrawAimReticle()
     {
-        Damageable damageable = GameObject.FindGameObjectWithTag("Player")?.GetComponent<Damageable>();
-        if (damageable != null)
+        int centerX = Screen.width / 2;
+        int centerY = Screen.height / 2;
+        int size = 30;
+        
+        GUI.color = reticleColor;
+        
+        // 十字准星
+        GUI.DrawLine(new Vector2(centerX - size, centerY), new Vector2(centerX - 10, centerY));
+        GUI.DrawLine(new Vector2(centerX + 10, centerY), new Vector2(centerX + size, centerY));
+        GUI.DrawLine(new Vector2(centerX, centerY - size), new Vector2(centerX, centerY - 10));
+        GUI.DrawLine(new Vector2(centerX, centerY + 10), new Vector2(centerX, centerY + size));
+        
+        // 瞄准环
+        DrawCircle(new Vector2(centerX, centerY), 50, reticleColor);
+        
+        GUI.color = Color.white;
+    }
+    
+    void DrawCircle(Vector2 center, float radius, Color color)
+    {
+        GUI.color = color;
+        int segments = 32;
+        Vector2[] points = new Vector2[segments + 1];
+        
+        for (int i = 0; i <= segments; i++)
         {
-            float healthPercent = damageable.currentHealth / damageable.maxHealth;
-            hullHealthBar.value = healthPercent;
+            float angle = (i / (float)segments) * Mathf.PI * 2;
+            points[i] = center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+        }
+        
+        for (int i = 0; i < segments; i++)
+        {
+            GUI.DrawLine(points[i], points[i + 1]);
+        }
+        
+        GUI.color = Color.white;
+    }
+    
+    void DrawRadar()
+    {
+        int radarSize = 150;
+        int radarX = 10;
+        int radarY = Screen.height - radarSize - 10;
+        
+        // 雷达背景
+        GUI.Box(new Rect(radarX, radarY, radarSize, radarSize), "雷达");
+        
+        GUI.color = Color.cyan;
+        
+        // 雷达范围指示
+        float innerRadius = radarSize * 0.3f;
+        float outerRadius = radarSize * 0.45f;
+        
+        // 前方扇形（100km）
+        DrawRadarArc(new Vector2(radarX + radarSize/2, radarY + radarSize/2), outerRadius, -45, 45, Color.cyan);
+        
+        // 侧面区域（60km）
+        DrawRadarArc(new Vector2(radarX + radarSize/2, radarY + radarSize/2), innerRadius, 45, 135, Color.blue);
+        DrawRadarArc(new Vector2(radarX + radarSize/2, radarY + radarSize/2), innerRadius, -135, -45, Color.blue);
+        
+        // 敌人点
+        foreach (Transform enemy in enemiesOnRadar)
+        {
+            if (playerShip != null)
+            {
+                Vector3 relativePos = playerShip.InverseTransformPoint(enemy.position);
+                float distance = relativePos.magnitude;
+                float angle = Mathf.Atan2(relativePos.x, relativePos.z) * Mathf.Rad2Deg;
+                
+                float normalizedDistance = Mathf.Clamp(distance / frontRadarRange, 0, 1);
+                float pointRadius = outerRadius * normalizedDistance;
+                
+                float x = Mathf.Sin(angle * Mathf.Deg2Rad) * pointRadius;
+                float y = Mathf.Cos(angle * Mathf.Deg2Rad) * pointRadius;
+                
+                GUI.color = Color.red;
+                GUI.DrawTexture(new Rect(radarX + radarSize/2 + x - 3, radarY + radarSize/2 + y - 3, 6, 6), Texture2D.whiteTexture);
+            }
+        }
+        
+        // 导弹点
+        foreach (Transform missile in missiles)
+        {
+            if (playerShip != null)
+            {
+                Vector3 relativePos = playerShip.InverseTransformPoint(missile.position);
+                float distance = relativePos.magnitude;
+                float angle = Mathf.Atan2(relativePos.x, relativePos.z) * Mathf.Rad2Deg;
+                
+                float normalizedDistance = Mathf.Clamp(distance / rearMissileRange, 0, 1);
+                float pointRadius = outerRadius * normalizedDistance;
+                
+                float x = Mathf.Sin(angle * Mathf.Deg2Rad) * pointRadius;
+                float y = Mathf.Cos(angle * Mathf.Deg2Rad) * pointRadius;
+                
+                GUI.color = Color.magenta;
+                GUI.DrawTexture(new Rect(radarX + radarSize/2 + x - 4, radarY + radarSize/2 + y - 4, 8, 8), Texture2D.whiteTexture);
+            }
+        }
+        
+        // 距离标签
+        GUI.color = Color.white;
+        GUI.Label(new Rect(radarX + radarSize + 5, radarY + radarSize/4, 80, 20), "前: 100km");
+        GUI.Label(new Rect(radarX + radarSize + 5, radarY + radarSize/2, 80, 20), "侧: 60km");
+        GUI.Label(new Rect(radarX + radarSize + 5, radarY + radarSize * 3/4, 80, 20), "后: 40km");
+        
+        GUI.color = Color.white;
+    }
+    
+    void DrawRadarArc(Vector2 center, float radius, float startAngle, float endAngle, Color color)
+    {
+        GUI.color = color;
+        
+        int segments = 20;
+        float angleStep = (endAngle - startAngle) / segments;
+        
+        Vector2 lastPoint = center + new Vector2(
+            Mathf.Sin(startAngle * Mathf.Deg2Rad) * radius,
+            Mathf.Cos(startAngle * Mathf.Deg2Rad) * radius
+        );
+        
+        for (int i = 1; i <= segments; i++)
+        {
+            float angle = startAngle + angleStep * i;
+            Vector2 point = center + new Vector2(
+                Mathf.Sin(angle * Mathf.Deg2Rad) * radius,
+                Mathf.Cos(angle * Mathf.Deg2Rad) * radius
+            );
             
-            // 根据血量改变颜色
-            if (healthPercent > 0.6f)
-                hullHealthBar.fillRect.GetComponent<Image>().color = Color.green;
-            else if (healthPercent > 0.3f)
-                hullHealthBar.fillRect.GetComponent<Image>().color = Color.yellow;
-            else
-                hullHealthBar.fillRect.GetComponent<Image>().color = Color.red;
-        }
-    }
-    
-    // 辅助方法
-    Image CreateImage(string name)
-    {
-        GameObject obj = new GameObject(name);
-        obj.transform.SetParent(hudCanvas.transform);
-        return obj.AddComponent<Image>();
-    }
-    
-    Text CreateText(string name)
-    {
-        GameObject obj = new GameObject(name);
-        obj.transform.SetParent(hudCanvas.transform);
-        Text text = obj.AddComponent<Text>();
-        text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-        text.alignment = TextAnchor.MiddleCenter;
-        return text;
-    }
-    
-    Slider CreateSlider(string name)
-    {
-        GameObject obj = new GameObject(name);
-        obj.transform.SetParent(hudCanvas.transform);
-        return obj.AddComponent<Slider>();
-    }
-    
-    Sprite CreateCircleSprite()
-    {
-        // 创建简单的圆形精灵
-        Texture2D tex = new Texture2D(64, 64);
-        Color[] colors = new Color[64 * 64];
-        float center = 32;
-        float radius = 30;
-        
-        for (int y = 0; y < 64; y++)
-        {
-            for (int x = 0; x < 64; x++)
-            {
-                float dist = Vector2.Distance(new Vector2(x, y), new Vector2(center, center));
-                if (dist < radius && dist > radius - 3)
-                    colors[y * 64 + x] = Color.white;
-                else
-                    colors[y * 64 + x] = Color.clear;
-            }
+            GUI.DrawLine(lastPoint, point);
+            lastPoint = point;
         }
         
-        tex.SetPixels(colors);
-        tex.Apply();
-        return Sprite.Create(tex, new Rect(0, 0, 64, 64), new Vector2(0.5f, 0.5f), 64);
+        // 连接线到中心
+        Vector2 startPoint = center + new Vector2(
+            Mathf.Sin(startAngle * Mathf.Deg2Rad) * radius,
+            Mathf.Cos(startAngle * Mathf.Deg2Rad) * radius
+        );
+        Vector2 endPoint = center + new Vector2(
+            Mathf.Sin(endAngle * Mathf.Deg2Rad) * radius,
+            Mathf.Cos(endAngle * Mathf.Deg2Rad) * radius
+        );
+        
+        GUI.DrawLine(center, startPoint);
+        GUI.DrawLine(center, endPoint);
+        
+        GUI.color = Color.white;
     }
     
-    Sprite CreateRingSprite()
-    {
-        Texture2D tex = new Texture2D(128, 128);
-        Color[] colors = new Color[128 * 128];
-        float center = 64;
-        float radius = 60;
-        
-        for (int y = 0; y < 128; y++)
-        {
-            for (int x = 0; x < 128; x++)
-            {
-                float dist = Vector2.Distance(new Vector2(x, y), new Vector2(center, center));
-                if (dist < radius && dist > radius - 2)
-                    colors[y * 128 + x] = new Color(0.3f, 0.8f, 1f, 0.8f);
-                else
-                    colors[y * 128 + x] = Color.clear;
-            }
-        }
-        
-        tex.SetPixels(colors);
-        tex.Apply();
-        return Sprite.Create(tex, new Rect(0, 0, 128, 128), new Vector2(0.5f, 0.5f), 128);
-    }
-    
-    Sprite CreateRadarSprite()
-    {
-        Texture2D tex = new Texture2D(128, 128);
-        Color[] colors = new Color[128 * 128];
-        float center = 64;
-        float radius = 60;
-        
-        // 绘制圆形边框
-        for (int y = 0; y < 128; y++)
-        {
-            for (int x = 0; x < 128; x++)
-            {
-                float dist = Vector2.Distance(new Vector2(x, y), new Vector2(center, center));
-                if (dist < radius && dist > radius - 2)
-                    colors[y * 128 + x] = new Color(0.3f, 0.6f, 0.9f, 0.6f);
-                else if (dist < radius * 0.5f && dist > radius * 0.5f - 1)
-                    colors[y * 128 + x] = new Color(0.3f, 0.6f, 0.9f, 0.4f);
-                else
-                    colors[y * 128 + x] = Color.clear;
-            }
-        }
-        
-        tex.SetPixels(colors);
-        tex.Apply();
-        return Sprite.Create(tex, new Rect(0, 0, 128, 128), new Vector2(0.5f, 0.5f), 128);
-    }
-    
-    // 公开方法供其他脚本调用
-    public void SetLocked(bool locked)
+    public void SetLockWarning(bool locked)
     {
         isLocked = locked;
     }
     
-    public void AddMissile(Transform missile)
+    public void SetMissileWarning(bool warning, float distance = 0)
     {
-        if (!missiles.Contains(missile))
-            missiles.Add(missile);
-    }
-    
-    public void RemoveMissile(Transform missile)
-    {
-        missiles.Remove(missile);
-    }
-    
-    public void SetOnlinePlayers(int count)
-    {
-        onlinePlayersText.text = $"在线: {count}人";
-    }
-    
-    public void SetBattleStatus(string status)
-    {
-        battleStatusText.text = $"战斗状态: {status}";
-    }
-    
-    public void SetWeaponStatus(string status, Color color)
-    {
-        weaponStatusText.text = status;
-        weaponStatusText.color = color;
+        isMissileWarning = warning;
+        missileDistance = distance;
     }
 }

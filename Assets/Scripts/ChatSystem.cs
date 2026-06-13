@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.UI;
 using System.Collections.Generic;
 using System;
 
@@ -14,15 +13,14 @@ public class ChatSystem : MonoBehaviour
     public event Action<ChatMessage> OnMessageReceived;
     public event Action<ulong, string> OnPlayerNameChanged;
     
-    [Header("UI配置")]
-    public Canvas chatCanvas;
-    public GameObject chatPanel;
-    public InputField messageInput;
-    public Text chatHistoryText;
+    [Header("聊天设置")]
+    public bool enableChat = true;
+    public int maxMessages = 50;
     
     private ChatChannel currentChannel = ChatChannel.Global;
-    private int maxMessages = 50;
     private bool isChatOpen = false;
+    private string inputText = "";
+    private Vector2 scrollPos = Vector2.zero;
     
     void Awake()
     {
@@ -36,11 +34,15 @@ public class ChatSystem : MonoBehaviour
             Destroy(gameObject);
         }
         
-        CreateChatUI();
+        // 添加初始消息
+        AddSystemMessage("欢迎来到星辰飞舰！");
+        AddSystemMessage("按 T 打开聊天，按 ESC 关闭");
     }
     
     void Update()
     {
+        if (!enableChat) return;
+        
         if (Input.GetKeyDown(KeyCode.T) && !isChatOpen)
         {
             OpenChat();
@@ -50,168 +52,22 @@ public class ChatSystem : MonoBehaviour
         {
             CloseChat();
         }
-    }
-    
-    void CreateChatUI()
-    {
-        GameObject canvasObj = new GameObject("ChatCanvas");
-        canvasObj.transform.SetParent(transform);
-        chatCanvas = canvasObj.AddComponent<Canvas>();
-        chatCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        chatCanvas.sortingOrder = 150;
         
-        CanvasScaler scaler = canvasObj.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920, 1080);
-        
-        canvasObj.AddComponent<GraphicRaycaster>();
-        
-        chatPanel = new GameObject("ChatPanel");
-        chatPanel.transform.SetParent(canvasObj.transform);
-        Image panelBg = chatPanel.AddComponent<Image>();
-        RectTransform panelRect = panelBg.rectTransform;
-        panelRect.anchorMin = new Vector2(0, 0);
-        panelRect.anchorMax = new Vector2(0, 0);
-        panelRect.anchoredPosition = new Vector2(250, 150);
-        panelRect.sizeDelta = new Vector2(500, 300);
-        panelBg.color = new Color(0f, 0.1f, 0.2f, 0.9f);
-        
-        GameObject historyObj = new GameObject("ChatHistory");
-        historyObj.transform.SetParent(chatPanel.transform);
-        chatHistoryText = historyObj.AddComponent<Text>();
-        RectTransform histRect = chatHistoryText.rectTransform;
-        histRect.anchorMin = new Vector2(0, 0.3f);
-        histRect.anchorMax = new Vector2(1, 1);
-        histRect.offsetMin = new Vector2(10, 0);
-        histRect.offsetMax = new Vector2(-10, -10);
-        chatHistoryText.fontSize = 14;
-        chatHistoryText.color = Color.white;
-        chatHistoryText.supportRichText = true;
-        chatHistoryText.alignment = TextAnchor.UpperLeft;
-        chatHistoryText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-        
-        GameObject inputObj = new GameObject("MessageInput");
-        inputObj.transform.SetParent(chatPanel.transform);
-        messageInput = inputObj.AddComponent<InputField>();
-        RectTransform inputRect = messageInput.rectTransform;
-        inputRect.anchorMin = new Vector2(0, 0);
-        inputRect.anchorMax = new Vector2(1, 0.3f);
-        inputRect.offsetMin = new Vector2(10, 10);
-        inputRect.offsetMax = new Vector2(-10, -10);
-        
-        GameObject inputBg = inputObj.AddComponent<Image>();
-        inputBg.color = new Color(0.1f, 0.2f, 0.3f, 0.9f);
-        messageInput.targetGraphic = inputBg;
-        
-        GameObject placeholderObj = new GameObject("Placeholder");
-        placeholderObj.transform.SetParent(inputObj.transform);
-        Text placeholderText = placeholderObj.AddComponent<Text>();
-        placeholderText.rectTransform.anchorMin = Vector2.zero;
-        placeholderText.rectTransform.anchorMax = Vector2.one;
-        placeholderText.rectTransform.offsetMin = Vector2.zero;
-        placeholderText.rectTransform.offsetMax = Vector2.one;
-        placeholderText.text = "按T打开聊天...";
-        placeholderText.fontSize = 14;
-        placeholderText.color = Color.gray;
-        placeholderText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-        placeholderText.alignment = TextAnchor.MiddleLeft;
-        messageInput.placeholder = placeholderText;
-        
-        chatPanel.SetActive(false);
-    }
-    
-    public void OpenChat()
-    {
-        chatPanel.SetActive(true);
-        isChatOpen = true;
-        messageInput.text = "";
-        messageInput.ActivateInputField();
-        Time.timeScale = 0f;
-    }
-    
-    public void CloseChat()
-    {
-        chatPanel.SetActive(false);
-        isChatOpen = false;
-        messageInput.text = "";
-        Time.timeScale = 1f;
-    }
-    
-    public void SendGlobalMessage(string message)
-    {
-        if (string.IsNullOrWhiteSpace(message)) return;
-        
-        ChatMessage msg = new ChatMessage
+        if (isChatOpen && Input.GetKeyDown(KeyCode.Return))
         {
-            senderId = 0,
-            senderName = "Player",
-            content = message,
-            channel = ChatChannel.Global,
-            timestamp = DateTime.Now
-        };
-        
-        chatHistory.Add(msg);
-        OnMessageReceived?.Invoke(msg);
-        UpdateChatDisplay();
-        CloseChat();
+            SendMessage(inputText);
+        }
     }
     
-    public void SendTeamMessage(string message)
+    void OnGUI()
     {
-        if (string.IsNullOrWhiteSpace(message)) return;
+        if (!enableChat) return;
         
-        ChatMessage msg = new ChatMessage
-        {
-            senderId = 0,
-            senderName = "Player",
-            content = message,
-            channel = ChatChannel.Team,
-            timestamp = DateTime.Now
-        };
+        // 聊天面板背景
+        GUI.Box(new Rect(10, Screen.height - 200, 450, 190), "聊天");
         
-        chatHistory.Add(msg);
-        OnMessageReceived?.Invoke(msg);
-        UpdateChatDisplay();
-        CloseChat();
-    }
-    
-    public void SendPrivateMessage(ulong targetId, string message)
-    {
-        if (string.IsNullOrWhiteSpace(message)) return;
-        
-        ChatMessage msg = new ChatMessage
-        {
-            senderId = 0,
-            senderName = "Player",
-            content = message,
-            channel = ChatChannel.Private,
-            targetId = targetId,
-            timestamp = DateTime.Now
-        };
-        
-        chatHistory.Add(msg);
-        OnMessageReceived?.Invoke(msg);
-        UpdateChatDisplay();
-        CloseChat();
-    }
-    
-    public string FormatMessage(ChatMessage msg)
-    {
-        string channelPrefix = msg.channel switch
-        {
-            ChatChannel.Global => "<color=cyan>[全局]</color>",
-            ChatChannel.Team => "<color=green>[团队]</color>",
-            ChatChannel.Private => "<color=yellow>[私聊]</color>",
-            _ => ""
-        };
-        
-        string timeStr = msg.timestamp.ToString("HH:mm");
-        return $"{channelPrefix} [{timeStr}] <color=white>{msg.senderName}:</color> {msg.content}\n";
-    }
-    
-    void UpdateChatDisplay()
-    {
-        if (chatHistoryText == null) return;
+        // 聊天历史
+        scrollPos = GUI.BeginScrollView(new Rect(20, Screen.height - 175, 430, 120), scrollPos, new Rect(0, 0, 410, Mathf.Max(120, chatHistory.Count * 20)));
         
         string display = "";
         int start = Mathf.Max(0, chatHistory.Count - maxMessages);
@@ -221,7 +77,103 @@ public class ChatSystem : MonoBehaviour
             display += FormatMessage(chatHistory[i]);
         }
         
-        chatHistoryText.text = display;
+        GUI.Label(new Rect(0, 0, 410, chatHistory.Count * 20), display);
+        GUI.EndScrollView();
+        
+        // 输入框
+        if (isChatOpen)
+        {
+            GUI.SetNextControlName("ChatInput");
+            inputText = GUI.TextField(new Rect(20, Screen.height - 40, 430, 25), inputText);
+            GUI.FocusControl("ChatInput");
+        }
+        else
+        {
+            GUI.Label(new Rect(20, Screen.height - 40, 430, 25), "按 T 打开聊天...");
+        }
+        
+        // 频道选择
+        GUI.Label(new Rect(470, Screen.height - 190, 80, 20), "频道:");
+        if (GUI.Button(new Rect(470, Screen.height - 165, 80, 20), "全局"))
+        {
+            currentChannel = ChatChannel.Global;
+        }
+        if (GUI.Button(new Rect(470, Screen.height - 140, 80, 20), "团队"))
+        {
+            currentChannel = ChatChannel.Team;
+        }
+        if (GUI.Button(new Rect(470, Screen.height - 115, 80, 20), "私聊"))
+        {
+            currentChannel = ChatChannel.Private;
+        }
+    }
+    
+    void OpenChat()
+    {
+        isChatOpen = true;
+        inputText = "";
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+    
+    void CloseChat()
+    {
+        isChatOpen = false;
+        inputText = "";
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+    }
+    
+    void SendMessage(string message)
+    {
+        if (string.IsNullOrWhiteSpace(message)) return;
+        
+        ChatMessage msg = new ChatMessage
+        {
+            senderId = 0,
+            senderName = "玩家",
+            content = message,
+            channel = currentChannel,
+            timestamp = DateTime.Now
+        };
+        
+        chatHistory.Add(msg);
+        OnMessageReceived?.Invoke(msg);
+        inputText = "";
+    }
+    
+    void AddSystemMessage(string message)
+    {
+        ChatMessage msg = new ChatMessage
+        {
+            senderId = ulong.MaxValue,
+            senderName = "系统",
+            content = message,
+            channel = ChatChannel.Global,
+            timestamp = DateTime.Now
+        };
+        
+        chatHistory.Add(msg);
+    }
+    
+    public string FormatMessage(ChatMessage msg)
+    {
+        string channelPrefix = msg.channel switch
+        {
+            ChatChannel.Global => "[全局]",
+            ChatChannel.Team => "[团队]",
+            ChatChannel.Private => "[私聊]",
+            _ => ""
+        };
+        
+        string timeStr = msg.timestamp.ToString("HH:mm");
+        
+        if (msg.senderId == ulong.MaxValue)
+        {
+            return $"[{timeStr}] <color=yellow>{msg.senderName}:</color> {msg.content}\n";
+        }
+        
+        return $"{channelPrefix} [{timeStr}] {msg.senderName}: {msg.content}\n";
     }
     
     public void SetChannel(ChatChannel channel)
@@ -237,7 +189,6 @@ public class ChatSystem : MonoBehaviour
     public void ClearHistory()
     {
         chatHistory.Clear();
-        UpdateChatDisplay();
     }
 }
 
