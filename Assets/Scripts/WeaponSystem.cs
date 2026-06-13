@@ -22,6 +22,10 @@ public class WeaponSystem : MonoBehaviour
     public int countermeasureCount = 8;
     public GameObject countermeasurePrefab;
     
+    [Header("激光视觉效果")]
+    public LineRenderer laserLineRenderer;
+    public float laserVisualDuration = 0.1f;
+    
     void Update()
     {
         HandleInput();
@@ -29,19 +33,19 @@ public class WeaponSystem : MonoBehaviour
     
     void HandleInput()
     {
-        // 导弹发射
-        if (Input.GetKeyDown(KeyCode.Space) && CanFireMissile())
+        // 导弹发射 (左Alt)
+        if (Input.GetKeyDown(KeyCode.LeftAlt) && CanFireMissile())
         {
             FireMissile();
         }
         
-        // 激光炮
+        // 激光炮 (鼠标左键)
         if (Input.GetMouseButton(0) && CanFireLaser())
         {
             FireLaser();
         }
         
-        // 干扰弹
+        // 干扰弹 (C键)
         if (Input.GetKeyDown(KeyCode.C) && countermeasureCount > 0)
         {
             DeployCountermeasure();
@@ -85,7 +89,7 @@ public class WeaponSystem : MonoBehaviour
     void FireLaser()
     {
         RaycastHit hit;
-        Vector3 origin = transform.position;
+        Vector3 origin = transform.position + transform.forward * 2f; // 从机头前方发射
         Vector3 direction = transform.forward;
         
         if (Physics.Raycast(origin, direction, out hit, laserRange))
@@ -94,14 +98,41 @@ public class WeaponSystem : MonoBehaviour
             if (target != null)
             {
                 target.TakeDamage(laserDamage);
-                Debug.Log($"激光命中！造成 {laserDamage} 伤害");
+                Debug.Log($"激光命中！造成 {laserDamage} 伤害 - 目标: {hit.collider.name}");
             }
             
             // 激光视觉效果
-            Debug.DrawRay(origin, direction * hit.distance, Color.red, 0.1f);
+            ShowLaserEffect(origin, hit.point);
+        }
+        else
+        {
+            // 没有命中目标时的激光效果
+            ShowLaserEffect(origin, origin + direction * laserRange);
         }
         
         lastLaserTime = Time.time;
+    }
+    
+    void ShowLaserEffect(Vector3 start, Vector3 end)
+    {
+        if (laserLineRenderer != null)
+        {
+            laserLineRenderer.SetPosition(0, start);
+            laserLineRenderer.SetPosition(1, end);
+            laserLineRenderer.enabled = true;
+            
+            // 延迟关闭
+            CancelInvoke("HideLaserEffect");
+            Invoke("HideLaserEffect", laserVisualDuration);
+        }
+    }
+    
+    void HideLaserEffect()
+    {
+        if (laserLineRenderer != null)
+        {
+            laserLineRenderer.enabled = false;
+        }
     }
     
     void DeployCountermeasure()

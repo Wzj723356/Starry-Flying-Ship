@@ -93,11 +93,18 @@ public class SimpleSceneGenerator : MonoBehaviour
         ship.transform.position = new Vector3(0, 50f, 0);
         ship.transform.localScale = new Vector3(2f, 1f, 6f);
         
-        // 飞行控制
-        ship.AddComponent<StarShipFlightController>();
+        // 添加Rigidbody
+        Rigidbody rb = ship.AddComponent<Rigidbody>();
+        rb.mass = 2000f;
+        rb.useGravity = false;
+        rb.drag = 0.1f;
+        rb.angularDrag = 0.5f;
+        
+        // 飞行控制 - 战雷风格
+        ship.AddComponent<SimpleFlightTest>();
         
         // 武器系统
-        ship.AddComponent<WeaponSystem>();
+        WeaponSystem weapon = ship.AddComponent<WeaponSystem>();
         
         // 干扰弹
         ship.AddComponent<CountermeasureSystem>();
@@ -157,7 +164,6 @@ public class SimpleSceneGenerator : MonoBehaviour
         GameObject manager = new GameObject("GameManager");
         manager.AddComponent<GameManager>();
         manager.AddComponent<MissionManager>();
-        manager.AddComponent<NetworkManager>();
         manager.AddComponent<ChatSystem>();
         manager.AddComponent<FriendSystem>();
     }
