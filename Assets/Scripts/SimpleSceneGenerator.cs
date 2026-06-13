@@ -2,199 +2,77 @@ using UnityEngine;
 
 public class SimpleSceneGenerator : MonoBehaviour
 {
-    [Header("生成选项")]
-    public bool generateStars = true;
-    public bool generatePlanets = true;
-    public bool generateAsteroids = true;
-    public bool generatePlayer = true;
-    public bool generateEnemies = true;
+    public GameObject playerPrefab;
     
     void Awake()
     {
-        if (generateStars) GenerateStars();
-        if (generatePlanets) GeneratePlanets();
-        if (generateAsteroids) GenerateAsteroids();
-        if (generatePlayer) GeneratePlayer();
-        if (generateEnemies) GenerateEnemies();
+        GenerateScene();
+    }
+    
+    void GenerateScene()
+    {
+        // 创建玩家飞船
+        GameObject playerShip = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        playerShip.name = "PlayerShip";
+        playerShip.transform.localScale = new Vector3(4, 1, 2);
+        playerShip.transform.position = new Vector3(0, 5, 0);
         
-        GenerateCamera();
-        SetupGameManager();
-    }
-    
-    void GenerateStars()
-    {
-        GameObject starField = new GameObject("StarField");
-        for (int i = 0; i < 500; i++)
-        {
-            GameObject star = new GameObject($"Star_{i}");
-            star.transform.parent = starField.transform;
-            Vector3 pos = Random.insideUnitSphere * 2000f;
-            star.transform.position = pos;
-            
-            Light light = star.AddComponent<Light>();
-            light.type = LightType.Point;
-            light.range = Random.Range(20f, 100f);
-            light.intensity = Random.Range(0.2f, 1f);
-            light.color = Random.ColorHSV(0, 1, 0.8f, 1f, 0.8f, 1f);
-        }
-    }
-    
-    void GeneratePlanets()
-    {
-        for (int i = 0; i < 5; i++)
-        {
-            GameObject planet = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            planet.name = $"Planet_{i}";
-            
-            float size = Random.Range(50f, 200f);
-            planet.transform.localScale = Vector3.one * size;
-            
-            Vector2 circle = Random.insideUnitCircle.normalized * Random.Range(500f, 1500f);
-            planet.transform.position = new Vector3(circle.x, Random.Range(-100f, 100f), circle.y);
-            
-            Material mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-            mat.color = Random.ColorHSV(0, 1, 0.5f, 0.8f, 0.6f, 0.9f);
-            planet.GetComponent<Renderer>().material = mat;
-        }
-    }
-    
-    void GenerateAsteroids()
-    {
-        GameObject belt = new GameObject("AsteroidBelt");
-        for (int i = 0; i < 100; i++)
-        {
-            GameObject asteroid = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            asteroid.name = $"Asteroid_{i}";
-            asteroid.transform.parent = belt.transform;
-            
-            float angle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
-            float radius = 400f + Random.Range(-30f, 30f);
-            
-            asteroid.transform.position = new Vector3(
-                Mathf.Cos(angle) * radius,
-                Random.Range(-10f, 10f),
-                Mathf.Sin(angle) * radius
-            );
-            
-            asteroid.transform.rotation = Random.rotation;
-            asteroid.transform.localScale = Vector3.one * Random.Range(2f, 8f);
-            
-            Material mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-            mat.color = new Color(0.4f, 0.35f, 0.3f);
-            asteroid.GetComponent<Renderer>().material = mat;
-        }
-    }
-    
-    void GeneratePlayer()
-    {
-        GameObject ship = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        ship.name = "PlayerShip";
-        ship.tag = "Player";
-        ship.transform.position = new Vector3(0, 50f, 0);
-        ship.transform.localScale = new Vector3(2f, 1f, 6f);
-        
-        // 添加Rigidbody
-        Rigidbody rb = ship.AddComponent<Rigidbody>();
-        rb.mass = 2000f;
-        rb.useGravity = false;
+        // 添加刚体
+        Rigidbody rb = playerShip.AddComponent<Rigidbody>();
+        rb.mass = 1000f;
         rb.drag = 0.1f;
         rb.angularDrag = 0.5f;
+        rb.useGravity = true;
         
-        // 飞行控制 - 战雷风格
-        ship.AddComponent<SimpleFlightTest>();
+        // 添加飞行控制脚本
+        playerShip.AddComponent<SimpleFlightTest>();
         
-        // 武器系统
-        WeaponSystem weapon = ship.AddComponent<WeaponSystem>();
+        // 创建地面
+        GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
+        ground.name = "Ground";
+        ground.transform.localScale = new Vector3(20, 1, 20);
         
-        // 干扰弹
-        ship.AddComponent<CountermeasureSystem>();
-        
-        // 目标系统
-        ship.AddComponent<TargetingSystem>();
-        
-        // 可损坏
-        ship.AddComponent<Damageable>();
-        
-        // 导弹发射器
-        MissileLauncher launcher = ship.AddComponent<MissileLauncher>();
-        launcher.missilePrefab = CreateMissilePrefab();
-        launcher.launchPoint = ship.transform;
-        
-        // 材质
-        Material shipMat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-        shipMat.color = new Color(0.2f, 0.6f, 1f);
-        ship.GetComponent<Renderer>().material = shipMat;
-    }
-    
-    GameObject CreateMissilePrefab()
-    {
-        GameObject missile = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-        missile.name = "Missile";
-        missile.tag = "Missile";
-        missile.transform.localScale = new Vector3(0.3f, 1f, 0.3f);
-        
-        Renderer renderer = missile.GetComponent<Renderer>();
-        if (renderer != null)
+        // 创建一些山峰
+        for (int i = 0; i < 10; i++)
         {
-            Material missileMat = new Material(Shader.Find("Unlit/Color"));
-            missileMat.color = Color.gray;
-            renderer.material = missileMat;
+            GameObject mountain = GameObject.CreatePrimitive(PrimitiveType.Cone);
+            mountain.name = "Mountain_" + i;
+            float scale = Random.Range(2, 6);
+            mountain.transform.localScale = new Vector3(scale, scale * 1.5f, scale);
+            mountain.transform.position = new Vector3(
+                Random.Range(-50, 50), 
+                scale * 0.75f, 
+                Random.Range(-50, 50)
+            );
         }
         
-        missile.AddComponent<MissileSystem>();
-        
-        // 暂时不显示预制件，只返回组件信息
-        return missile;
-    }
-    
-    void GenerateEnemies()
-    {
-        for (int i = 0; i < 3; i++)
+        // 创建星星背景
+        for (int i = 0; i < 100; i++)
         {
-            GameObject enemy = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            enemy.name = $"Enemy_{i}";
-            enemy.tag = "Enemy";
-            
-            Vector2 circle = Random.insideUnitCircle.normalized * Random.Range(200f, 400f);
-            enemy.transform.position = new Vector3(circle.x, 50f, circle.y);
-            enemy.transform.localScale = new Vector3(2f, 1f, 5f);
-            
-            enemy.AddComponent<EnemyAIController>();
-            enemy.AddComponent<Damageable>();
-            
-            Material enemyMat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-            enemyMat.color = new Color(1f, 0.2f, 0.2f);
-            enemy.GetComponent<Renderer>().material = enemyMat;
-        }
-    }
-    
-    void GenerateCamera()
-    {
-        Camera mainCam = Camera.main;
-        if (mainCam == null)
-        {
-            GameObject camObj = new GameObject("MainCamera");
-            mainCam = camObj.AddComponent<Camera>();
-            mainCam.tag = "MainCamera";
+            GameObject star = new GameObject("Star_" + i);
+            Light starLight = star.AddComponent<Light>();
+            starLight.type = LightType.Point;
+            starLight.range = Random.Range(100, 500);
+            starLight.intensity = Random.Range(0.1f, 0.5f);
+            starLight.color = Color.white;
+            star.transform.position = new Vector3(
+                Random.Range(-1000, 1000),
+                Random.Range(-1000, 1000),
+                Random.Range(-1000, 1000)
+            );
         }
         
-        mainCam.transform.position = new Vector3(0, 70f, -80f);
+        // 创建主摄像机跟随
+        Camera mainCamera = Camera.main;
+        CameraFollow cameraFollow = mainCamera.gameObject.AddComponent<CameraFollow>();
+        cameraFollow.target = playerShip.transform;
+        cameraFollow.distance = 15f;
+        cameraFollow.height = 5f;
         
-        CameraFollow follow = mainCam.gameObject.AddComponent<CameraFollow>();
-        follow.target = GameObject.Find("PlayerShip")?.transform;
-        follow.offset = new Vector3(0, 20f, -30f);
-    }
-    
-    void SetupGameManager()
-    {
-        GameObject manager = new GameObject("GameManager");
-        manager.AddComponent<GameManager>();
-        manager.AddComponent<MissionManager>();
-        manager.AddComponent<ChatSystem>();
-        manager.AddComponent<FriendSystem>();
-        manager.AddComponent<NetworkManager>();
+        // 创建游戏管理器
+        GameObject gameManager = new GameObject("GameManager");
+        gameManager.AddComponent<GameManager>();
         
-        // HUD系统
-        HUDManager hud = manager.AddComponent<HUDManager>();
+        Debug.Log("场景生成完成！");
     }
 }

@@ -111,10 +111,6 @@ public class EnemyAIController : MonoBehaviour
         
         Vector3 direction = (target.position - transform.position).normalized;
         rb.velocity = direction * chaseSpeed;
-        
-        // 锁定玩家
-        if (HUDManager.instance != null)
-            HUDManager.instance.SetLockedByEnemy(true);
     }
     
     void Attack()

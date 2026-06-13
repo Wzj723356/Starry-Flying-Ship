@@ -70,7 +70,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 100000011}
-  - component: {fileID: 100000012}
   m_Layer: 0
   m_Name: Directional Light
   m_TagString: Untagged
@@ -93,29 +92,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: -45, y: 30, z: -15}
---- !u!10 &100000012
-Light:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000010}
-  m_Enabled: 1
-  m_Type: 1
-  m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
-  m_Range: 100
-  m_SpotAngle: 60
-  m_Intensity: 1
-  m_BounceIntensity: 1
-  m_ShadowType: 0
-  m_CookieSize: 10
-  m_ShadowRadius: 1
-  m_ShadowAngle: 0.5
-  m_ShadowNearPlane: 0.1
-  m_Lightmapping: 1
-  m_ColorTemperature: 6500
-  m_ColorFilter: {r: 1, g: 1, b: 1, a: 1}
-  m_UseColorTemperature: 0
 --- !u!1 &100000020
 GameObject:
   m_ObjectHideFlags: 0
@@ -160,14 +136,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8a7cc9ae3ac5e45479500b7d5716d5b0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_GenerateStars: 1
-  m_StarCount: 500
-  m_GeneratePlanets: 1
-  m_PlanetCount: 5
-  m_GenerateAsteroids: 1
-  m_AsteroidCount: 100
-  m_GenerateEnemies: 1
-  m_EnemyCount: 3
 --- !u!29 &100000030
 OcclusionCullingSettings:
   m_ObjectHideFlags: 0
@@ -205,7 +173,7 @@ RenderSettings:
   m_ReflectionBounces: 1
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
-  m_Sun: {fileID: 100000010}
+  m_Sun: {fileID: 0}
   m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &100000050

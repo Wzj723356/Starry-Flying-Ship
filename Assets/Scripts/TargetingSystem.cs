@@ -106,11 +106,6 @@ public class TargetingSystem : MonoBehaviour
                 // 后方导弹检测
                 if (angle > 135f)
                 {
-                    if (HUDManager.instance != null)
-                    {
-                        HUDManager.instance.SetMissileIncoming(true);
-                    }
-                    
                     Debug.Log($"后方导弹来袭！距离: {toMissile.magnitude:F0}m");
                 }
             }

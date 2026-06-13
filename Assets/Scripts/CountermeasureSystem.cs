@@ -51,12 +51,6 @@ public class CountermeasureSystem : MonoBehaviour
         lastDeployTime = Time.time;
         
         Debug.Log($"干扰弹投放！剩余: {countermeasureCount}/{maxCountermeasures}");
-        
-        // 通知HUD
-        if (HUDManager.instance != null)
-        {
-            HUDManager.instance.SetMissileIncoming(false);
-        }
     }
     
     public void ReloadCountermeasures()
