@@ -3,6 +3,8 @@ using System.Collections.Generic;
 
 public class HUDManager : MonoBehaviour
 {
+    public static HUDManager instance;
+    
     [Header("瞄准系统")]
     public bool showAimReticle = true;
     public Color reticleColor = Color.cyan;
@@ -27,6 +29,11 @@ public class HUDManager : MonoBehaviour
     private bool isLocked = false;
     private bool isMissileWarning = false;
     private float missileDistance = 0f;
+    
+    void Awake()
+    {
+        instance = this;
+    }
     
     void Start()
     {
@@ -158,14 +165,15 @@ public class HUDManager : MonoBehaviour
         int centerX = Screen.width / 2;
         int centerY = Screen.height / 2;
         int size = 30;
+        int lineWidth = 2;
         
         GUI.color = reticleColor;
         
-        // 十字准星
-        GUI.DrawLine(new Vector2(centerX - size, centerY), new Vector2(centerX - 10, centerY));
-        GUI.DrawLine(new Vector2(centerX + 10, centerY), new Vector2(centerX + size, centerY));
-        GUI.DrawLine(new Vector2(centerX, centerY - size), new Vector2(centerX, centerY - 10));
-        GUI.DrawLine(new Vector2(centerX, centerY + 10), new Vector2(centerX, centerY + size));
+        // 十字准星 - 使用Box模拟线条
+        GUI.Box(new Rect(centerX - size, centerY - lineWidth/2, size - 10, lineWidth), "");
+        GUI.Box(new Rect(centerX + 10, centerY - lineWidth/2, size - 10, lineWidth), "");
+        GUI.Box(new Rect(centerX - lineWidth/2, centerY - size, lineWidth, size - 10), "");
+        GUI.Box(new Rect(centerX - lineWidth/2, centerY + 10, lineWidth, size - 10), "");
         
         // 瞄准环
         DrawCircle(new Vector2(centerX, centerY), 50, reticleColor);
@@ -176,18 +184,32 @@ public class HUDManager : MonoBehaviour
     void DrawCircle(Vector2 center, float radius, Color color)
     {
         GUI.color = color;
-        int segments = 32;
-        Vector2[] points = new Vector2[segments + 1];
         
-        for (int i = 0; i <= segments; i++)
-        {
-            float angle = (i / (float)segments) * Mathf.PI * 2;
-            points[i] = center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
-        }
+        // 使用多个矩形模拟圆形
+        int segments = 32;
+        float angleStep = 360f / segments;
         
         for (int i = 0; i < segments; i++)
         {
-            GUI.DrawLine(points[i], points[i + 1]);
+            float angle1 = i * angleStep * Mathf.Deg2Rad;
+            float angle2 = (i + 1) * angleStep * Mathf.Deg2Rad;
+            
+            float x1 = center.x + Mathf.Cos(angle1) * radius;
+            float y1 = center.y + Mathf.Sin(angle1) * radius;
+            float x2 = center.x + Mathf.Cos(angle2) * radius;
+            float y2 = center.y + Mathf.Sin(angle2) * radius;
+            
+            // 绘制小段线
+            float dx = x2 - x1;
+            float dy = y2 - y1;
+            float length = Mathf.Sqrt(dx * dx + dy * dy);
+            if (length > 0.1f)
+            {
+                float angle = Mathf.Atan2(dy, dx) * Mathf.Rad2Deg;
+                GUIUtility.RotateAroundPivot(angle, new Vector2(x1, y1));
+                GUI.Box(new Rect(x1, y1, length, 2), "");
+                GUIUtility.RotateAroundPivot(-angle, new Vector2(x1, y1));
+            }
         }
         
         GUI.color = Color.white;
@@ -271,35 +293,58 @@ public class HUDManager : MonoBehaviour
         int segments = 20;
         float angleStep = (endAngle - startAngle) / segments;
         
-        Vector2 lastPoint = center + new Vector2(
-            Mathf.Sin(startAngle * Mathf.Deg2Rad) * radius,
-            Mathf.Cos(startAngle * Mathf.Deg2Rad) * radius
-        );
-        
-        for (int i = 1; i <= segments; i++)
+        for (int i = 0; i < segments; i++)
         {
-            float angle = startAngle + angleStep * i;
-            Vector2 point = center + new Vector2(
-                Mathf.Sin(angle * Mathf.Deg2Rad) * radius,
-                Mathf.Cos(angle * Mathf.Deg2Rad) * radius
-            );
+            float angle1 = startAngle + angleStep * i;
+            float angle2 = startAngle + angleStep * (i + 1);
             
-            GUI.DrawLine(lastPoint, point);
-            lastPoint = point;
+            float x1 = center.x + Mathf.Sin(angle1 * Mathf.Deg2Rad) * radius;
+            float y1 = center.y + Mathf.Cos(angle1 * Mathf.Deg2Rad) * radius;
+            float x2 = center.x + Mathf.Sin(angle2 * Mathf.Deg2Rad) * radius;
+            float y2 = center.y + Mathf.Cos(angle2 * Mathf.Deg2Rad) * radius;
+            
+            // 使用Box模拟线条
+            float dx = x2 - x1;
+            float dy = y2 - y1;
+            float length = Mathf.Sqrt(dx * dx + dy * dy);
+            if (length > 0.1f)
+            {
+                float angle = Mathf.Atan2(dy, dx) * Mathf.Rad2Deg;
+                GUIUtility.RotateAroundPivot(angle, new Vector2(x1, y1));
+                GUI.Box(new Rect(x1, y1, length, 2), "");
+                GUIUtility.RotateAroundPivot(-angle, new Vector2(x1, y1));
+            }
         }
         
         // 连接线到中心
-        Vector2 startPoint = center + new Vector2(
-            Mathf.Sin(startAngle * Mathf.Deg2Rad) * radius,
-            Mathf.Cos(startAngle * Mathf.Deg2Rad) * radius
-        );
-        Vector2 endPoint = center + new Vector2(
-            Mathf.Sin(endAngle * Mathf.Deg2Rad) * radius,
-            Mathf.Cos(endAngle * Mathf.Deg2Rad) * radius
-        );
+        float startX = center.x + Mathf.Sin(startAngle * Mathf.Deg2Rad) * radius;
+        float startY = center.y + Mathf.Cos(startAngle * Mathf.Deg2Rad) * radius;
+        float endX = center.x + Mathf.Sin(endAngle * Mathf.Deg2Rad) * radius;
+        float endY = center.y + Mathf.Cos(endAngle * Mathf.Deg2Rad) * radius;
         
-        GUI.DrawLine(center, startPoint);
-        GUI.DrawLine(center, endPoint);
+        // 中心到起点
+        float dx1 = startX - center.x;
+        float dy1 = startY - center.y;
+        float len1 = Mathf.Sqrt(dx1 * dx1 + dy1 * dy1);
+        if (len1 > 0.1f)
+        {
+            float angle1 = Mathf.Atan2(dy1, dx1) * Mathf.Rad2Deg;
+            GUIUtility.RotateAroundPivot(angle1, center);
+            GUI.Box(new Rect(center.x, center.y, len1, 2), "");
+            GUIUtility.RotateAroundPivot(-angle1, center);
+        }
+        
+        // 中心到终点
+        float dx2 = endX - center.x;
+        float dy2 = endY - center.y;
+        float len2 = Mathf.Sqrt(dx2 * dx2 + dy2 * dy2);
+        if (len2 > 0.1f)
+        {
+            float angle2 = Mathf.Atan2(dy2, dx2) * Mathf.Rad2Deg;
+            GUIUtility.RotateAroundPivot(angle2, center);
+            GUI.Box(new Rect(center.x, center.y, len2, 2), "");
+            GUIUtility.RotateAroundPivot(-angle2, center);
+        }
         
         GUI.color = Color.white;
     }
@@ -313,5 +358,18 @@ public class HUDManager : MonoBehaviour
     {
         isMissileWarning = warning;
         missileDistance = distance;
+    }
+    
+    public void AddMissile(Transform missile)
+    {
+        if (!missiles.Contains(missile))
+        {
+            missiles.Add(missile);
+        }
+    }
+    
+    public void RemoveMissile(Transform missile)
+    {
+        missiles.Remove(missile);
     }
 }

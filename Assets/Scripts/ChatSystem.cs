@@ -55,7 +55,7 @@ public class ChatSystem : MonoBehaviour
         
         if (isChatOpen && Input.GetKeyDown(KeyCode.Return))
         {
-            SendMessage(inputText);
+            SendChatMessage(inputText);
         }
     }
     
@@ -124,7 +124,7 @@ public class ChatSystem : MonoBehaviour
         Cursor.visible = false;
     }
     
-    void SendMessage(string message)
+    void SendChatMessage(string message)
     {
         if (string.IsNullOrWhiteSpace(message)) return;
         
