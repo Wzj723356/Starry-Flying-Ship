@@ -115,10 +115,36 @@ public class SimpleSceneGenerator : MonoBehaviour
         // 可损坏
         ship.AddComponent<Damageable>();
         
+        // 导弹发射器
+        MissileLauncher launcher = ship.AddComponent<MissileLauncher>();
+        launcher.missilePrefab = CreateMissilePrefab();
+        launcher.launchPoint = ship.transform;
+        
         // 材质
         Material shipMat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
         shipMat.color = new Color(0.2f, 0.6f, 1f);
         ship.GetComponent<Renderer>().material = shipMat;
+    }
+    
+    GameObject CreateMissilePrefab()
+    {
+        GameObject missile = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+        missile.name = "Missile";
+        missile.tag = "Missile";
+        missile.transform.localScale = new Vector3(0.3f, 1f, 0.3f);
+        
+        Renderer renderer = missile.GetComponent<Renderer>();
+        if (renderer != null)
+        {
+            Material missileMat = new Material(Shader.Find("Unlit/Color"));
+            missileMat.color = Color.gray;
+            renderer.material = missileMat;
+        }
+        
+        missile.AddComponent<MissileSystem>();
+        
+        // 暂时不显示预制件，只返回组件信息
+        return missile;
     }
     
     void GenerateEnemies()
@@ -166,5 +192,9 @@ public class SimpleSceneGenerator : MonoBehaviour
         manager.AddComponent<MissionManager>();
         manager.AddComponent<ChatSystem>();
         manager.AddComponent<FriendSystem>();
+        manager.AddComponent<NetworkManager>();
+        
+        // HUD系统
+        HUDManager hud = manager.AddComponent<HUDManager>();
     }
 }
