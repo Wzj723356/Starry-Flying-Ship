@@ -53,51 +53,47 @@ public class HUDManager : MonoBehaviour
         enemiesOnRadar.Clear();
         missiles.Clear();
         
-        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
-        GameObject[] missileObjects = GameObject.FindGameObjectsWithTag("Missile");
+        // 使用名称查找敌人和导弹（避免标签问题）
+        GameObject[] allObjects = GameObject.FindObjectsOfType<GameObject>();
         
-        foreach (GameObject enemy in enemies)
+        foreach (GameObject obj in allObjects)
         {
-            if (playerShip != null)
+            if (obj.name.StartsWith("Enemy_") && playerShip != null)
             {
-                Vector3 toEnemy = enemy.transform.position - playerShip.position;
+                Transform enemy = obj.transform;
+                if (enemy == null) continue;
+                
+                Vector3 toEnemy = enemy.position - playerShip.position;
                 float distance = toEnemy.magnitude;
+                float forwardDot = Vector3.Dot(playerShip.forward, toEnemy.normalized);
                 
                 // 前方100km雷达
-                float forwardDot = Vector3.Dot(playerShip.forward, toEnemy.normalized);
                 if (forwardDot > 0 && distance < frontRadarRange)
                 {
-                    enemiesOnRadar.Add(enemy.transform);
+                    enemiesOnRadar.Add(enemy);
                 }
                 // 侧面60km雷达
                 else if (Mathf.Abs(forwardDot) < 0.707f && distance < sideRadarRange)
                 {
-                    enemiesOnRadar.Add(enemy.transform);
+                    enemiesOnRadar.Add(enemy);
                 }
             }
-        }
-        
-        foreach (GameObject missile in missileObjects)
-        {
-            if (playerShip != null)
+            else if (obj.name == "Missile" && playerShip != null)
             {
-                Vector3 toMissile = missile.transform.position - playerShip.position;
+                Transform missile = obj.transform;
+                if (missile == null) continue;
+                
+                Vector3 toMissile = missile.position - playerShip.position;
                 float distance = toMissile.magnitude;
                 
-                missiles.Add(missile.transform);
-                
-                // 后方导弹检测
+                // 后方40km导弹检测
                 float forwardDot = Vector3.Dot(playerShip.forward, toMissile.normalized);
-                if (forwardDot < 0 && distance < rearMissileRange)
+                if (forwardDot < -0.5f && distance < rearMissileRange)
                 {
-                    isMissileWarning = true;
-                    missileDistance = distance;
+                    missiles.Add(missile);
                 }
             }
         }
-        
-        // 锁定检测（简化版本）
-        isLocked = enemiesOnRadar.Count > 0 && Random.value > 0.7f;
     }
     
     void OnGUI()
@@ -218,7 +214,7 @@ public class HUDManager : MonoBehaviour
     void DrawRadar()
     {
         int radarSize = 150;
-        int radarX = 10;
+        int radarX = Screen.width - radarSize - 10;  // 移到右边
         int radarY = Screen.height - radarSize - 10;
         
         // 雷达背景
@@ -240,7 +236,7 @@ public class HUDManager : MonoBehaviour
         // 敌人点
         foreach (Transform enemy in enemiesOnRadar)
         {
-            if (playerShip != null)
+            if (playerShip != null && enemy != null)
             {
                 Vector3 relativePos = playerShip.InverseTransformPoint(enemy.position);
                 float distance = relativePos.magnitude;
@@ -260,7 +256,7 @@ public class HUDManager : MonoBehaviour
         // 导弹点
         foreach (Transform missile in missiles)
         {
-            if (playerShip != null)
+            if (playerShip != null && missile != null)
             {
                 Vector3 relativePos = playerShip.InverseTransformPoint(missile.position);
                 float distance = relativePos.magnitude;
@@ -279,9 +275,9 @@ public class HUDManager : MonoBehaviour
         
         // 距离标签
         GUI.color = Color.white;
-        GUI.Label(new Rect(radarX + radarSize + 5, radarY + radarSize/4, 80, 20), "前: 100km");
-        GUI.Label(new Rect(radarX + radarSize + 5, radarY + radarSize/2, 80, 20), "侧: 60km");
-        GUI.Label(new Rect(radarX + radarSize + 5, radarY + radarSize * 3/4, 80, 20), "后: 40km");
+        GUI.Label(new Rect(radarX - 85, radarY + radarSize/4, 80, 20), "前: 100km");
+        GUI.Label(new Rect(radarX - 85, radarY + radarSize/2, 80, 20), "侧: 60km");
+        GUI.Label(new Rect(radarX - 85, radarY + radarSize * 3/4, 80, 20), "后: 40km");
         
         GUI.color = Color.white;
     }

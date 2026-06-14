@@ -1,6 +1,6 @@
-YAML: 1.1
-VERSION: 1.0
---- !u!1 &100000000
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,146 +8,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - {fileID: 100000001}
-  - {fileID: 100000002}
-  - {fileID: 100000003}
-  m_Layer: 0
-  m_Name: Main Camera
-  m_TagString: MainCamera
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!2 &100000001
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000000}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!24 &100000002
-Camera:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a005e51a68e05784491165e98a509911, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.20392157, b: 0.21176471, a: 1}
-  m_CullingMask: 4294967295
-  m_Projection: 1
-  m_FOV: 60
-  m_NearClipPlane: 0.3
-  m_FarClipPlane: 1000
-  m_OrthoWidth: 5
-  m_OrthoNearClipPlane: -1
-  m_OrthoFarClipPlane: 1
-  m_Depth: -1
-  m_RenderTarget: {fileID: 0}
-  m_TargetDisplay: 0
-  m_TargetTexture: {fileID: 0}
-  m_TargetDepth: 0
-  m_TargetEye: 0
-  m_UseOcclusionCulling: 1
-  m_HDR: 1
-  m_AllowMSAA: 1
-  m_AllowDynamicResolution: 0
---- !u!114 &100000003
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000000}
-  m_Enabled: 1
---- !u!1 &100000004
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - {fileID: 100000005}
-  - {fileID: 100000006}
-  m_Layer: 0
-  m_Name: Directional Light
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 4
-  m_IsActive: 1
---- !u!2 &100000005
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000004}
-  m_LocalRotation: {x: 0.61237244, y: 0.5, z: 0.5, w: 0.35355338}
-  m_LocalPosition: {x: 0, y: 10, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_RootOrder: 1
-  m_LocalEulerAnglesHint: {x: 60, y: 45, z: 0}
---- !u!109 &100000006
-Light:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000004}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 01f5bdf03f34b400c9b8c8781088811d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Type: 0
-  m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
-  m_Intensity: 1
-  m_Range: 100
-  m_SpotAngle: 30
-  m_CookieSize: 10
-  m_Cookie: {fileID: 0}
-  m_ShadowType: 1
-  m_ShadowStrength: 1
-  m_ShadowResolution: 1
-  m_ShadowBias: 0.05
-  m_ShadowNormalBias: 0.4
-  m_ShadowNearPlane: 0.1
-  m_ShadowRadius: 1
-  m_UseSoftShadow: 0
-  m_ContactShadow: 0
-  m_ContactShadowLength: 0.1
-  m_CullingMask: 4294967295
-  m_RenderingLayerMask: 1
-  m_Lightmapping: 1
-  m_RealtimeEmissive: 1
-  m_EmissiveColor: {r: 0, g: 0, b: 0, a: 1}
-  m_EmissiveIntensity: 1
---- !u!1 &100000007
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - {fileID: 100000008}
-  - {fileID: 100000009}
+  - {fileID: 2}
+  - {fileID: 3}
   m_Layer: 0
   m_Name: Generator
   m_TagString: Untagged
@@ -155,45 +17,38 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!2 &100000008
+--- !u!2 &2
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000007}
+  m_GameObject: {fileID: 1}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 2
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &100000009
+--- !u!114 &3
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000007}
+  m_GameObject: {fileID: 1}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a7cc9ae3ac5e45479500b7d5716d5b0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &100000010
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100000000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a2c3da03fc5b7744784f9375f2c19e98, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!154 &100000011
+  m_GenerateStars: 1
+  m_GeneratePlanets: 1
+  m_GenerateAsteroids: 1
+  m_GeneratePlayer: 1
+  m_GenerateEnemies: 1
+--- !u!154 &4
 SceneSettings:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -205,70 +60,9 @@ SceneSettings:
   m_Script: {fileID: 0}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_SceneGUID: 00000000000000000000000000000000
-  m_SceneName: TestScene
-  m_ScenePath: Assets/Scenes/TestScene.unity
---- !u!108 &100000012
-RenderSettings:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Fog: 0
-  m_FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-  m_FogDensity: 0.01
-  m_FogStartDistance: 0
-  m_FogEndDistance: 300
-  m_FogMode: 3
   m_AmbientMode: 0
-  m_AmbientSkyColor: {r: 0.30588236, g: 0.3294118, b: 0.36862746, a: 1}
-  m_AmbientEquatorColor: {r: 0.2627451, g: 0.2784314, b: 0.30588236, a: 1}
-  m_AmbientGroundColor: {r: 0.15294118, g: 0.15294118, b: 0.15294118, a: 1}
+  m_AmbientSkyColor: {r: 0.19215687, g: 0.20392157, b: 0.21176471, a: 1}
+  m_AmbientEquatorColor: {r: 0.19215687, g: 0.20392157, b: 0.21176471, a: 1}
+  m_AmbientGroundColor: {r: 0.19215687, g: 0.20392157, b: 0.21176471, a: 1}
   m_AmbientIntensity: 1
-  m_AmbientGI: 1
-  m_SubtractiveShadowColor: {r: 0, g: 0, b: 0, a: 1}
-  m_SkyboxMaterial: {fileID: 0}
-  m_HaloStrength: 0.5
-  m_FlareStrength: 1
-  m_FlareFadeSpeed: 3
-  m_HaloTexture: {fileID: 0}
-  m_DefaultReflectionMode: 1
-  m_DefaultReflectionResolution: 256
-  m_ReflectionIntensity: 1
-  m_ReflectionBounces: 1
-  m_CustomReflection: {fileID: 0}
-  m_Sun: {fileID: 100000004}
-  m_IndirectSpecularColor: {r: 1, g: 1, b: 1, a: 1}
-  m_UseRadianceAmbientProbe: 0
---- !u!107 &100000013
-LightmapSettings:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Lightmaps: []
-  m_LightmapsMode: 0
-  m_LightmapEditorSettings:
-    m_BakeResolution: 2048
-    m_BakePadding: 4
-    m_CompressionQuality: 1
-    m_FinalGather: 0
-    m_FinalGatherFiltering: 1
-    m_FinalGatherRayCount: 256
-    m_ReflectionCompression: 2
-    m_MixedBakeMode: 2
-    m_BakeBackend: 1
-  m_LightingDataAsset: {fileID: 0}
-  m_LightingSettings: {fileID: 0}
+  m_Fog: 0

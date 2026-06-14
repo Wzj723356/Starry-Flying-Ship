@@ -41,6 +41,9 @@ public class EnemyAIController : MonoBehaviour
         if (rb == null)
             rb = gameObject.AddComponent<Rigidbody>();
         
+        rb.useGravity = false;
+        rb.drag = 0.1f;
+        
         FindTarget();
     }
     
@@ -53,7 +56,7 @@ public class EnemyAIController : MonoBehaviour
     
     void Update()
     {
-        if (target == null)
+        if (target == null || target.gameObject == null)
         {
             FindTarget();
             return;
