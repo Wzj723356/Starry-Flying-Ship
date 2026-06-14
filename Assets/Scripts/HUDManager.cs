@@ -238,7 +238,7 @@ public class HUDManager : MonoBehaviour
     void DrawRadar()
     {
         int radarSize = 150;
-        int radarX = Screen.width - radarSize - 10;  // 移到右边
+        int radarX = 10;  // 移到左边
         int radarY = Screen.height - radarSize - 10;
         
         // 雷达背景
@@ -297,11 +297,11 @@ public class HUDManager : MonoBehaviour
             }
         }
         
-        // 距离标签
+        // 距离标签（移到右边）
         GUI.color = Color.white;
-        GUI.Label(new Rect(radarX - 85, radarY + radarSize/4, 80, 20), "前: 100km");
-        GUI.Label(new Rect(radarX - 85, radarY + radarSize/2, 80, 20), "侧: 60km");
-        GUI.Label(new Rect(radarX - 85, radarY + radarSize * 3/4, 80, 20), "后: 40km");
+        GUI.Label(new Rect(radarX + radarSize + 5, radarY + radarSize/4, 80, 20), "前: 100km");
+        GUI.Label(new Rect(radarX + radarSize + 5, radarY + radarSize/2, 80, 20), "侧: 60km");
+        GUI.Label(new Rect(radarX + radarSize + 5, radarY + radarSize * 3/4, 80, 20), "后: 40km");
         
         GUI.color = Color.white;
     }
@@ -391,7 +391,7 @@ public class HUDManager : MonoBehaviour
     void DrawDamageModel()
     {
         int modelX = 10;
-        int modelY = Screen.height - damageModelSize - 10;
+        int modelY = Screen.height - damageModelSize - 200; // 移到左中位置（雷达上方）
         
         // 模型背景框
         GUI.Box(new Rect(modelX, modelY, damageModelSize, damageModelSize), "飞船状态");

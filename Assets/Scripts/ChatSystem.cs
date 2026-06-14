@@ -63,8 +63,8 @@ public class ChatSystem : MonoBehaviour
     {
         if (!enableChat) return;
         
-        // 聊天面板背景 - 缩小尺寸，移到右边（腾出左边给受损小模型）
-        int chatX = Screen.width - 350;
+        // 聊天面板背景 - 移到左下角
+        int chatX = 10;
         int chatY = Screen.height - 180;
         GUI.Box(new Rect(chatX, chatY, 340, 170), "聊天");
         
@@ -82,7 +82,7 @@ public class ChatSystem : MonoBehaviour
         GUI.Label(new Rect(0, 0, 300, chatHistory.Count * 20), display);
         GUI.EndScrollView();
         
-        // 输入框 - 缩小尺寸
+        // 输入框
         if (isChatOpen)
         {
             GUI.SetNextControlName("ChatInput");
