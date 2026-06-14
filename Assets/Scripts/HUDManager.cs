@@ -126,6 +126,14 @@ public class HUDManager : MonoBehaviour
             
             // 高度显示
             GUI.Label(new Rect(10, 30, 200, 20), $"高度: {playerShip.position.y:F1} m");
+            
+            // 节流阀显示
+            SimpleFlightTest flightController = playerShip.GetComponent<SimpleFlightTest>();
+            if (flightController != null)
+            {
+                float throttle = flightController.GetThrottle();
+                DrawThrottleIndicator(10, 50, throttle);
+            }
         }
         
         // 在线人数（模拟）
@@ -195,10 +203,33 @@ public class HUDManager : MonoBehaviour
         GUI.Box(new Rect(centerX - lineWidth/2, centerY - size, lineWidth, size - 10), "");
         GUI.Box(new Rect(centerX - lineWidth/2, centerY + 10, lineWidth, size - 10), "");
         
-        // 瞄准环
-        DrawCircle(new Vector2(centerX, centerY), 50, reticleColor);
+        // 内瞄准环
+        DrawCircle(new Vector2(centerX, centerY), 30, reticleColor);
+        // 外瞄准环
+        DrawCircle(new Vector2(centerX, centerY), 70, reticleColor);
+        
+        // 瞄准点
+        GUI.DrawTexture(new Rect(centerX - 4, centerY - 4, 8, 8), Texture2D.whiteTexture);
         
         GUI.color = Color.white;
+    }
+    
+    void DrawThrottleIndicator(int x, int y, float throttle)
+    {
+        int width = 150;
+        int height = 20;
+        
+        // 背景
+        GUI.Box(new Rect(x, y, width, height), "节流阀");
+        
+        // 进度条
+        float fillWidth = width * throttle;
+        GUI.color = throttle > 0.8f ? Color.red : throttle > 0.5f ? Color.yellow : Color.green;
+        GUI.Box(new Rect(x + 2, y + 2, fillWidth - 4, height - 4), "");
+        
+        // 数值
+        GUI.color = Color.white;
+        GUI.Label(new Rect(x + width + 5, y, 50, height), $"{Mathf.RoundToInt(throttle * 100)}%");
     }
     
     void DrawCircle(Vector2 center, float radius, Color color)
@@ -238,7 +269,7 @@ public class HUDManager : MonoBehaviour
     void DrawRadar()
     {
         int radarSize = 150;
-        int radarX = 10;  // 移到左边
+        int radarX = Screen.width - radarSize - 10;  // 移到右边
         int radarY = Screen.height - radarSize - 10;
         
         // 雷达背景
@@ -297,11 +328,11 @@ public class HUDManager : MonoBehaviour
             }
         }
         
-        // 距离标签（移到右边）
+        // 距离标签
         GUI.color = Color.white;
-        GUI.Label(new Rect(radarX + radarSize + 5, radarY + radarSize/4, 80, 20), "前: 100km");
-        GUI.Label(new Rect(radarX + radarSize + 5, radarY + radarSize/2, 80, 20), "侧: 60km");
-        GUI.Label(new Rect(radarX + radarSize + 5, radarY + radarSize * 3/4, 80, 20), "后: 40km");
+        GUI.Label(new Rect(radarX - 85, radarY + radarSize/4, 80, 20), "前: 100km");
+        GUI.Label(new Rect(radarX - 85, radarY + radarSize/2, 80, 20), "侧: 60km");
+        GUI.Label(new Rect(radarX - 85, radarY + radarSize * 3/4, 80, 20), "后: 40km");
         
         GUI.color = Color.white;
     }

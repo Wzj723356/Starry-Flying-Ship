@@ -63,13 +63,13 @@ public class ChatSystem : MonoBehaviour
     {
         if (!enableChat) return;
         
-        // 聊天面板背景 - 移到左下角
+        // 聊天面板背景 - 缩小并移到左下角（雷达左边）
         int chatX = 10;
-        int chatY = Screen.height - 180;
-        GUI.Box(new Rect(chatX, chatY, 340, 170), "聊天");
+        int chatY = Screen.height - 140;
+        GUI.Box(new Rect(chatX, chatY, 250, 130), "聊天");
         
         // 聊天历史
-        scrollPos = GUI.BeginScrollView(new Rect(chatX + 10, chatY + 25, 320, 100), scrollPos, new Rect(0, 0, 300, Mathf.Max(100, chatHistory.Count * 20)));
+        scrollPos = GUI.BeginScrollView(new Rect(chatX + 8, chatY + 22, 234, 75), scrollPos, new Rect(0, 0, 220, Mathf.Max(75, chatHistory.Count * 18)));
         
         string display = "";
         int start = Mathf.Max(0, chatHistory.Count - maxMessages);
@@ -79,25 +79,25 @@ public class ChatSystem : MonoBehaviour
             display += FormatMessage(chatHistory[i]);
         }
         
-        GUI.Label(new Rect(0, 0, 300, chatHistory.Count * 20), display);
+        GUI.Label(new Rect(0, 0, 220, chatHistory.Count * 18), display);
         GUI.EndScrollView();
         
         // 输入框
         if (isChatOpen)
         {
             GUI.SetNextControlName("ChatInput");
-            inputText = GUI.TextField(new Rect(chatX + 10, chatY + 135, 280, 25), inputText, 100);
+            inputText = GUI.TextField(new Rect(chatX + 8, chatY + 105, 200, 20), inputText, 100);
             GUI.FocusControl("ChatInput");
             
             // 发送按钮
-            if (GUI.Button(new Rect(chatX + 295, chatY + 135, 50, 25), "发送"))
+            if (GUI.Button(new Rect(chatX + 210, chatY + 105, 40, 20), "发送"))
             {
                 SendChatMessage(inputText);
             }
         }
         else
         {
-            GUI.Label(new Rect(chatX + 10, chatY + 135, 280, 25), "按 T 打开聊天...");
+            GUI.Label(new Rect(chatX + 8, chatY + 105, 200, 20), "按 T 打开聊天...");
         }
     }
     
