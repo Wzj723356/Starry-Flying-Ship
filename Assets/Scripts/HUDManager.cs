@@ -193,23 +193,12 @@ public class HUDManager : MonoBehaviour
         int centerX = Screen.width / 2;
         int centerY = Screen.height / 2;
         int size = 15;  // 缩小准星
-        int lineWidth = 1;
-        int aimRingSize = 25;  // 缩小瞄准环
+        int lineWidth = 2;
+        int aimRingSize = 30;  // 瞄准环大小
         
-        // 获取飞行控制器的瞄准偏移
-        Vector2 reticleOffset = Vector2.zero;
-        if (playerShip != null)
-        {
-            SimpleFlightTest flightController = playerShip.GetComponent<SimpleFlightTest>();
-            if (flightController != null)
-            {
-                reticleOffset = flightController.GetReticleOffset();
-            }
-        }
-        
-        // 瞄准环位置随鼠标移动
-        int ringX = centerX + (int)reticleOffset.x;
-        int ringY = centerY + (int)reticleOffset.y;
+        // 瞄准环直接跟随鼠标位置（战雷风格）
+        int ringX = Input.mousePosition.x;
+        int ringY = Screen.height - Input.mousePosition.y;  // 转换坐标系
         
         GUI.color = reticleColor;
         
@@ -219,11 +208,13 @@ public class HUDManager : MonoBehaviour
         GUI.Box(new Rect(centerX - lineWidth/2, centerY - size, lineWidth, size - 5), "");
         GUI.Box(new Rect(centerX - lineWidth/2, centerY + 5, lineWidth, size - 5), "");
         
-        // 瞄准环（随鼠标移动）
-        DrawCircle(new Vector2(ringX, ringY), aimRingSize, reticleColor);
+        // 瞄准点（白色小点放在准星中心）
+        GUI.color = Color.white;
+        GUI.DrawTexture(new Rect(centerX - 2, centerY - 2, 4, 4), Texture2D.whiteTexture);
         
-        // 瞄准点（随鼠标移动）
-        GUI.DrawTexture(new Rect(ringX - 3, ringY - 3, 6, 6), Texture2D.whiteTexture);
+        // 瞄准环（直接跟随鼠标位置）
+        GUI.color = reticleColor;
+        DrawCircle(new Vector2(ringX, ringY), aimRingSize, reticleColor);
         
         GUI.color = Color.white;
     }
@@ -292,15 +283,15 @@ public class HUDManager : MonoBehaviour
         GUI.color = Color.cyan;
         
         // 雷达范围指示
-        float innerRadius = radarSize * 0.3f;
-        float outerRadius = radarSize * 0.45f;
+        float sideRadius = radarSize * 0.35f;   // 侧面较小
+        float frontRadius = radarSize * 0.45f;  // 前方较大
         
-        // 前方扇形（100km）- 修复方向，前方朝上
-        DrawRadarArc(new Vector2(radarX + radarSize/2, radarY + radarSize/2), outerRadius, 135, -135, Color.cyan); // 前方（上）
+        // 前方扇形（100km）- 大扇形，前方朝上
+        DrawRadarArc(new Vector2(radarX + radarSize/2, radarY + radarSize/2), frontRadius, 120, -120, Color.cyan); // 前方（上）
         
-        // 侧面区域（60km）
-        DrawRadarArc(new Vector2(radarX + radarSize/2, radarY + radarSize/2), innerRadius, 45, 135, Color.blue); // 右侧
-        DrawRadarArc(new Vector2(radarX + radarSize/2, radarY + radarSize/2), innerRadius, -135, -45, Color.blue); // 左侧
+        // 侧面区域（60km）- 较小的扇形
+        DrawRadarArc(new Vector2(radarX + radarSize/2, radarY + radarSize/2), sideRadius, 60, 120, Color.blue); // 右侧
+        DrawRadarArc(new Vector2(radarX + radarSize/2, radarY + radarSize/2), sideRadius, -120, -60, Color.blue); // 左侧
         
         // 敌人点
         foreach (Transform enemy in enemiesOnRadar)
@@ -309,13 +300,30 @@ public class HUDManager : MonoBehaviour
             {
                 Vector3 relativePos = playerShip.InverseTransformPoint(enemy.position);
                 float distance = relativePos.magnitude;
-                // 修复角度计算，前方为正方向（上）
+                // 前方为正方向（上）
                 float angle = Mathf.Atan2(relativePos.z, relativePos.x) * Mathf.Rad2Deg;
                 
-                float normalizedDistance = Mathf.Clamp(distance / frontRadarRange, 0, 1);
-                float pointRadius = outerRadius * normalizedDistance;
+                // 根据角度确定使用哪个半径
+                float normalizedDistance;
+                float pointRadius;
+                if (Mathf.Abs(angle) <= 60f)
+                {
+                    // 前方区域
+                    normalizedDistance = Mathf.Clamp(distance / frontRadarRange, 0, 1);
+                    pointRadius = frontRadius * normalizedDistance;
+                }
+                else if (Mathf.Abs(angle) <= 120f)
+                {
+                    // 侧面区域
+                    normalizedDistance = Mathf.Clamp(distance / sideRadarRange, 0, 1);
+                    pointRadius = sideRadius * normalizedDistance;
+                }
+                else
+                {
+                    // 后方无雷达，不显示
+                    continue;
+                }
                 
-                // 修复方向：前方朝上
                 float x = Mathf.Cos(angle * Mathf.Deg2Rad) * pointRadius;
                 float y = -Mathf.Sin(angle * Mathf.Deg2Rad) * pointRadius;
                 
@@ -324,7 +332,7 @@ public class HUDManager : MonoBehaviour
             }
         }
         
-        // 导弹点
+        // 导弹点（仅显示后方40km内）
         foreach (Transform missile in missiles)
         {
             if (playerShip != null && missile != null)
@@ -333,8 +341,11 @@ public class HUDManager : MonoBehaviour
                 float distance = relativePos.magnitude;
                 float angle = Mathf.Atan2(relativePos.z, relativePos.x) * Mathf.Rad2Deg;
                 
+                // 仅显示后方导弹
+                if (Mathf.Abs(angle) <= 120f) continue;
+                
                 float normalizedDistance = Mathf.Clamp(distance / rearMissileRange, 0, 1);
-                float pointRadius = outerRadius * normalizedDistance;
+                float pointRadius = sideRadius * normalizedDistance;
                 
                 float x = Mathf.Cos(angle * Mathf.Deg2Rad) * pointRadius;
                 float y = -Mathf.Sin(angle * Mathf.Deg2Rad) * pointRadius;
@@ -348,7 +359,7 @@ public class HUDManager : MonoBehaviour
         GUI.color = Color.white;
         GUI.Label(new Rect(radarX - 85, radarY + radarSize/4, 80, 20), "前: 100km");
         GUI.Label(new Rect(radarX - 85, radarY + radarSize/2, 80, 20), "侧: 60km");
-        GUI.Label(new Rect(radarX - 85, radarY + radarSize * 3/4, 80, 20), "后: 40km");
+        GUI.Label(new Rect(radarX - 85, radarY + radarSize * 3/4, 80, 20), "后: 无");
         
         GUI.color = Color.white;
     }
@@ -438,7 +449,7 @@ public class HUDManager : MonoBehaviour
     void DrawDamageModel()
     {
         int modelX = 10;
-        int modelY = Screen.height - damageModelSize - 80; // 往下移，避免与节流阀穿模
+        int modelY = Screen.height - damageModelSize - 160; // 往上移，避免与节流阀和聊天框穿模
         
         // 模型背景框
         GUI.Box(new Rect(modelX, modelY, damageModelSize, damageModelSize), "飞船状态");

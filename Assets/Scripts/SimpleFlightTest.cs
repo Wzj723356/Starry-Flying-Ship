@@ -90,10 +90,19 @@ public class SimpleFlightTest : MonoBehaviour
         if (qKey) yawInput -= 1f;
         if (eKey) yawInput += 1f;
         
-        // 鼠标控制（万能 - 始终生效）
-        // 瞄准环控制机体转向
-        pitchInput += -reticleOffset.y / maxReticleOffset * pitchSpeed;
-        yawInput += reticleOffset.x / maxReticleOffset * yawSpeed;
+        // 战雷风格鼠标控制：鼠标位置直接控制瞄准方向，机体自动对正
+        // 获取鼠标相对于屏幕中心的偏移
+        float mouseX = Input.mousePosition.x - Screen.width / 2;
+        float mouseY = Input.mousePosition.y - Screen.height / 2;
+        
+        // 将鼠标偏移转换为角度控制
+        float maxMouseDist = Mathf.Max(Screen.width, Screen.height) / 2f;
+        float normalizedX = mouseX / maxMouseDist;
+        float normalizedY = mouseY / maxMouseDist;
+        
+        // 鼠标控制俯仰和偏航
+        pitchInput += -normalizedY * 2f;  // 鼠标向上移动 = 机头向上
+        yawInput += normalizedX * 2f;     // 鼠标向右移动 = 机头向右
         
         // 应用控制（带惯性的平滑）
         ApplyControls(pitchInput, yawInput, rollInput);
