@@ -22,6 +22,10 @@ public class HUDManager : MonoBehaviour
     [Header("操作台状态")]
     public bool showStatus = true;
     
+    [Header("受损模型")]
+    public bool showDamageModel = true;
+    public int damageModelSize = 120;
+    
     private Transform playerShip;
     private List<Transform> enemiesOnRadar = new List<Transform>();
     private List<Transform> missiles = new List<Transform>();
@@ -29,6 +33,13 @@ public class HUDManager : MonoBehaviour
     private bool isLocked = false;
     private bool isMissileWarning = false;
     private float missileDistance = 0f;
+    
+    // 飞船部件受损状态（模拟）
+    private float engineHealth = 1f;      // 发动机
+    private float wingHealth = 1f;        // 机翼
+    private float hullHealth = 1f;        // 船体
+    private float cockpitHealth = 1f;     // 舰桥
+    private float landingGearHealth = 1f; // 起落架
     
     void Awake()
     {
@@ -46,6 +57,13 @@ public class HUDManager : MonoBehaviour
         
         // 检测敌人和导弹
         DetectEnemiesAndMissiles();
+        
+        // 模拟受损变化（测试用）
+        if (Input.GetKeyDown(KeyCode.Alpha1)) engineHealth = Mathf.Max(0, engineHealth - 0.2f);
+        if (Input.GetKeyDown(KeyCode.Alpha2)) wingHealth = Mathf.Max(0, wingHealth - 0.2f);
+        if (Input.GetKeyDown(KeyCode.Alpha3)) hullHealth = Mathf.Max(0, hullHealth - 0.2f);
+        if (Input.GetKeyDown(KeyCode.Alpha4)) cockpitHealth = Mathf.Max(0, cockpitHealth - 0.2f);
+        if (Input.GetKeyDown(KeyCode.Alpha5)) landingGearHealth = Mathf.Max(0, landingGearHealth - 0.2f);
     }
     
     void DetectEnemiesAndMissiles()
@@ -147,6 +165,12 @@ public class HUDManager : MonoBehaviour
         if (showRadar)
         {
             DrawRadar();
+        }
+        
+        // 受损小模型（左下角）
+        if (showDamageModel)
+        {
+            DrawDamageModel();
         }
         
         // 准星
@@ -362,6 +386,76 @@ public class HUDManager : MonoBehaviour
         {
             missiles.Add(missile);
         }
+    }
+    
+    void DrawDamageModel()
+    {
+        int modelX = 10;
+        int modelY = Screen.height - damageModelSize - 10;
+        
+        // 模型背景框
+        GUI.Box(new Rect(modelX, modelY, damageModelSize, damageModelSize), "飞船状态");
+        
+        // 飞船中心点
+        int centerX = modelX + damageModelSize / 2;
+        int centerY = modelY + damageModelSize / 2;
+        
+        // 飞船主体（简化为长方形）
+        int bodyWidth = 80;
+        int bodyHeight = 20;
+        GUI.color = GetDamageColor(hullHealth);
+        GUI.Box(new Rect(centerX - bodyWidth/2, centerY - bodyHeight/2, bodyWidth, bodyHeight), "");
+        
+        // 左侧发动机
+        int engineWidth = 25;
+        int engineHeight = 15;
+        GUI.color = GetDamageColor(engineHealth);
+        GUI.Box(new Rect(centerX - bodyWidth/2 - engineWidth, centerY - engineHeight/2, engineWidth, engineHeight), "");
+        
+        // 右侧发动机
+        GUI.Box(new Rect(centerX + bodyWidth/2, centerY - engineHeight/2, engineWidth, engineHeight), "");
+        
+        // 机翼（上下）
+        int wingWidth = 15;
+        int wingHeight = 30;
+        GUI.color = GetDamageColor(wingHealth);
+        GUI.Box(new Rect(centerX - wingWidth/2, centerY - bodyHeight/2 - wingHeight, wingWidth, wingHeight), "");
+        GUI.Box(new Rect(centerX - wingWidth/2, centerY + bodyHeight/2, wingWidth, wingHeight), "");
+        
+        // 舰桥（顶部）
+        int cockpitWidth = 15;
+        int cockpitHeight = 15;
+        GUI.color = GetDamageColor(cockpitHealth);
+        GUI.Box(new Rect(centerX - cockpitWidth/2, centerY - bodyHeight/2 - wingHeight - cockpitHeight, cockpitWidth, cockpitHeight), "");
+        
+        // 起落架指示（底部）
+        int gearWidth = 10;
+        int gearHeight = 12;
+        GUI.color = GetDamageColor(landingGearHealth);
+        GUI.Box(new Rect(centerX - 20, centerY + bodyHeight/2 + wingHeight, gearWidth, gearHeight), "");
+        GUI.Box(new Rect(centerX + 10, centerY + bodyHeight/2 + wingHeight, gearWidth, gearHeight), "");
+        
+        // 状态标签
+        GUI.color = Color.white;
+        GUI.Label(new Rect(modelX, modelY - 20, damageModelSize, 20), $"船体: {Mathf.RoundToInt(hullHealth * 100)}%");
+        GUI.Label(new Rect(modelX, modelY + damageModelSize + 5, 80, 20), $"发动机: {Mathf.RoundToInt(engineHealth * 100)}%");
+        GUI.Label(new Rect(modelX + 85, modelY + damageModelSize + 5, 80, 20), $"机翼: {Mathf.RoundToInt(wingHealth * 100)}%");
+        GUI.Label(new Rect(modelX, modelY + damageModelSize + 25, 80, 20), $"舰桥: {Mathf.RoundToInt(cockpitHealth * 100)}%");
+        GUI.Label(new Rect(modelX + 85, modelY + damageModelSize + 25, 80, 20), $"起落架: {Mathf.RoundToInt(landingGearHealth * 100)}%");
+        
+        GUI.color = Color.white;
+    }
+    
+    Color GetDamageColor(float health)
+    {
+        if (health > 0.7f)
+            return Color.green;
+        else if (health > 0.4f)
+            return Color.yellow;
+        else if (health > 0.1f)
+            return Color.red;
+        else
+            return Color.gray;
     }
     
     public void RemoveMissile(Transform missile)

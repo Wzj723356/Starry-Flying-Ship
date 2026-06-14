@@ -63,11 +63,13 @@ public class ChatSystem : MonoBehaviour
     {
         if (!enableChat) return;
         
-        // 聊天面板背景 - 增大尺寸
-        GUI.Box(new Rect(10, Screen.height - 250, 500, 240), "聊天");
+        // 聊天面板背景 - 缩小尺寸，移到右边（腾出左边给受损小模型）
+        int chatX = Screen.width - 350;
+        int chatY = Screen.height - 180;
+        GUI.Box(new Rect(chatX, chatY, 340, 170), "聊天");
         
         // 聊天历史
-        scrollPos = GUI.BeginScrollView(new Rect(20, Screen.height - 220, 480, 150), scrollPos, new Rect(0, 0, 460, Mathf.Max(150, chatHistory.Count * 25)));
+        scrollPos = GUI.BeginScrollView(new Rect(chatX + 10, chatY + 25, 320, 100), scrollPos, new Rect(0, 0, 300, Mathf.Max(100, chatHistory.Count * 20)));
         
         string display = "";
         int start = Mathf.Max(0, chatHistory.Count - maxMessages);
@@ -77,40 +79,25 @@ public class ChatSystem : MonoBehaviour
             display += FormatMessage(chatHistory[i]);
         }
         
-        GUI.Label(new Rect(0, 0, 460, chatHistory.Count * 25), display);
+        GUI.Label(new Rect(0, 0, 300, chatHistory.Count * 20), display);
         GUI.EndScrollView();
         
-        // 输入框 - 增大尺寸
+        // 输入框 - 缩小尺寸
         if (isChatOpen)
         {
             GUI.SetNextControlName("ChatInput");
-            inputText = GUI.TextField(new Rect(20, Screen.height - 55, 480, 30), inputText, 100);
+            inputText = GUI.TextField(new Rect(chatX + 10, chatY + 135, 280, 25), inputText, 100);
             GUI.FocusControl("ChatInput");
             
             // 发送按钮
-            if (GUI.Button(new Rect(510, Screen.height - 55, 60, 30), "发送"))
+            if (GUI.Button(new Rect(chatX + 295, chatY + 135, 50, 25), "发送"))
             {
                 SendChatMessage(inputText);
             }
         }
         else
         {
-            GUI.Label(new Rect(20, Screen.height - 55, 480, 30), "按 T 打开聊天...");
-        }
-        
-        // 频道选择
-        GUI.Label(new Rect(520, Screen.height - 240, 80, 20), "频道:");
-        if (GUI.Button(new Rect(520, Screen.height - 215, 80, 25), "全局"))
-        {
-            currentChannel = ChatChannel.Global;
-        }
-        if (GUI.Button(new Rect(520, Screen.height - 185, 80, 25), "团队"))
-        {
-            currentChannel = ChatChannel.Team;
-        }
-        if (GUI.Button(new Rect(520, Screen.height - 155, 80, 25), "私聊"))
-        {
-            currentChannel = ChatChannel.Private;
+            GUI.Label(new Rect(chatX + 10, chatY + 135, 280, 25), "按 T 打开聊天...");
         }
     }
     
