@@ -192,24 +192,38 @@ public class HUDManager : MonoBehaviour
     {
         int centerX = Screen.width / 2;
         int centerY = Screen.height / 2;
-        int size = 30;
-        int lineWidth = 2;
+        int size = 15;  // 缩小准星
+        int lineWidth = 1;
+        int aimRingSize = 25;  // 缩小瞄准环
+        
+        // 获取飞行控制器的瞄准偏移
+        Vector2 reticleOffset = Vector2.zero;
+        if (playerShip != null)
+        {
+            SimpleFlightTest flightController = playerShip.GetComponent<SimpleFlightTest>();
+            if (flightController != null)
+            {
+                reticleOffset = flightController.GetReticleOffset();
+            }
+        }
+        
+        // 瞄准环位置随鼠标移动
+        int ringX = centerX + (int)reticleOffset.x;
+        int ringY = centerY + (int)reticleOffset.y;
         
         GUI.color = reticleColor;
         
-        // 十字准星 - 使用Box模拟线条
-        GUI.Box(new Rect(centerX - size, centerY - lineWidth/2, size - 10, lineWidth), "");
-        GUI.Box(new Rect(centerX + 10, centerY - lineWidth/2, size - 10, lineWidth), "");
-        GUI.Box(new Rect(centerX - lineWidth/2, centerY - size, lineWidth, size - 10), "");
-        GUI.Box(new Rect(centerX - lineWidth/2, centerY + 10, lineWidth, size - 10), "");
+        // 十字准星（固定在屏幕中心）
+        GUI.Box(new Rect(centerX - size, centerY - lineWidth/2, size - 5, lineWidth), "");
+        GUI.Box(new Rect(centerX + 5, centerY - lineWidth/2, size - 5, lineWidth), "");
+        GUI.Box(new Rect(centerX - lineWidth/2, centerY - size, lineWidth, size - 5), "");
+        GUI.Box(new Rect(centerX - lineWidth/2, centerY + 5, lineWidth, size - 5), "");
         
-        // 内瞄准环
-        DrawCircle(new Vector2(centerX, centerY), 30, reticleColor);
-        // 外瞄准环
-        DrawCircle(new Vector2(centerX, centerY), 70, reticleColor);
+        // 瞄准环（随鼠标移动）
+        DrawCircle(new Vector2(ringX, ringY), aimRingSize, reticleColor);
         
-        // 瞄准点
-        GUI.DrawTexture(new Rect(centerX - 4, centerY - 4, 8, 8), Texture2D.whiteTexture);
+        // 瞄准点（随鼠标移动）
+        GUI.DrawTexture(new Rect(ringX - 3, ringY - 3, 6, 6), Texture2D.whiteTexture);
         
         GUI.color = Color.white;
     }
@@ -269,7 +283,7 @@ public class HUDManager : MonoBehaviour
     void DrawRadar()
     {
         int radarSize = 150;
-        int radarX = Screen.width - radarSize - 10;  // 移到右边
+        int radarX = Screen.width - radarSize - 10;
         int radarY = Screen.height - radarSize - 10;
         
         // 雷达背景
@@ -281,12 +295,12 @@ public class HUDManager : MonoBehaviour
         float innerRadius = radarSize * 0.3f;
         float outerRadius = radarSize * 0.45f;
         
-        // 前方扇形（100km）
-        DrawRadarArc(new Vector2(radarX + radarSize/2, radarY + radarSize/2), outerRadius, -45, 45, Color.cyan);
+        // 前方扇形（100km）- 修复方向，前方朝上
+        DrawRadarArc(new Vector2(radarX + radarSize/2, radarY + radarSize/2), outerRadius, 135, -135, Color.cyan); // 前方（上）
         
         // 侧面区域（60km）
-        DrawRadarArc(new Vector2(radarX + radarSize/2, radarY + radarSize/2), innerRadius, 45, 135, Color.blue);
-        DrawRadarArc(new Vector2(radarX + radarSize/2, radarY + radarSize/2), innerRadius, -135, -45, Color.blue);
+        DrawRadarArc(new Vector2(radarX + radarSize/2, radarY + radarSize/2), innerRadius, 45, 135, Color.blue); // 右侧
+        DrawRadarArc(new Vector2(radarX + radarSize/2, radarY + radarSize/2), innerRadius, -135, -45, Color.blue); // 左侧
         
         // 敌人点
         foreach (Transform enemy in enemiesOnRadar)
@@ -295,13 +309,15 @@ public class HUDManager : MonoBehaviour
             {
                 Vector3 relativePos = playerShip.InverseTransformPoint(enemy.position);
                 float distance = relativePos.magnitude;
-                float angle = Mathf.Atan2(relativePos.x, relativePos.z) * Mathf.Rad2Deg;
+                // 修复角度计算，前方为正方向（上）
+                float angle = Mathf.Atan2(relativePos.z, relativePos.x) * Mathf.Rad2Deg;
                 
                 float normalizedDistance = Mathf.Clamp(distance / frontRadarRange, 0, 1);
                 float pointRadius = outerRadius * normalizedDistance;
                 
-                float x = Mathf.Sin(angle * Mathf.Deg2Rad) * pointRadius;
-                float y = Mathf.Cos(angle * Mathf.Deg2Rad) * pointRadius;
+                // 修复方向：前方朝上
+                float x = Mathf.Cos(angle * Mathf.Deg2Rad) * pointRadius;
+                float y = -Mathf.Sin(angle * Mathf.Deg2Rad) * pointRadius;
                 
                 GUI.color = Color.red;
                 GUI.DrawTexture(new Rect(radarX + radarSize/2 + x - 3, radarY + radarSize/2 + y - 3, 6, 6), Texture2D.whiteTexture);
@@ -315,13 +331,13 @@ public class HUDManager : MonoBehaviour
             {
                 Vector3 relativePos = playerShip.InverseTransformPoint(missile.position);
                 float distance = relativePos.magnitude;
-                float angle = Mathf.Atan2(relativePos.x, relativePos.z) * Mathf.Rad2Deg;
+                float angle = Mathf.Atan2(relativePos.z, relativePos.x) * Mathf.Rad2Deg;
                 
                 float normalizedDistance = Mathf.Clamp(distance / rearMissileRange, 0, 1);
                 float pointRadius = outerRadius * normalizedDistance;
                 
-                float x = Mathf.Sin(angle * Mathf.Deg2Rad) * pointRadius;
-                float y = Mathf.Cos(angle * Mathf.Deg2Rad) * pointRadius;
+                float x = Mathf.Cos(angle * Mathf.Deg2Rad) * pointRadius;
+                float y = -Mathf.Sin(angle * Mathf.Deg2Rad) * pointRadius;
                 
                 GUI.color = Color.magenta;
                 GUI.DrawTexture(new Rect(radarX + radarSize/2 + x - 4, radarY + radarSize/2 + y - 4, 8, 8), Texture2D.whiteTexture);
@@ -422,7 +438,7 @@ public class HUDManager : MonoBehaviour
     void DrawDamageModel()
     {
         int modelX = 10;
-        int modelY = Screen.height - damageModelSize - 200; // 移到左中位置（雷达上方）
+        int modelY = Screen.height - damageModelSize - 80; // 往下移，避免与节流阀穿模
         
         // 模型背景框
         GUI.Box(new Rect(modelX, modelY, damageModelSize, damageModelSize), "飞船状态");
@@ -465,14 +481,6 @@ public class HUDManager : MonoBehaviour
         GUI.color = GetDamageColor(landingGearHealth);
         GUI.Box(new Rect(centerX - 20, centerY + bodyHeight/2 + wingHeight, gearWidth, gearHeight), "");
         GUI.Box(new Rect(centerX + 10, centerY + bodyHeight/2 + wingHeight, gearWidth, gearHeight), "");
-        
-        // 状态标签
-        GUI.color = Color.white;
-        GUI.Label(new Rect(modelX, modelY - 20, damageModelSize, 20), $"船体: {Mathf.RoundToInt(hullHealth * 100)}%");
-        GUI.Label(new Rect(modelX, modelY + damageModelSize + 5, 80, 20), $"发动机: {Mathf.RoundToInt(engineHealth * 100)}%");
-        GUI.Label(new Rect(modelX + 85, modelY + damageModelSize + 5, 80, 20), $"机翼: {Mathf.RoundToInt(wingHealth * 100)}%");
-        GUI.Label(new Rect(modelX, modelY + damageModelSize + 25, 80, 20), $"舰桥: {Mathf.RoundToInt(cockpitHealth * 100)}%");
-        GUI.Label(new Rect(modelX + 85, modelY + damageModelSize + 25, 80, 20), $"起落架: {Mathf.RoundToInt(landingGearHealth * 100)}%");
         
         GUI.color = Color.white;
     }

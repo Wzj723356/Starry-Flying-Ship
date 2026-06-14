@@ -198,12 +198,10 @@ public class SimpleFlightTest : MonoBehaviour
         float thrustMultiplier = Mathf.Lerp(idleThrust / maxThrust, 1f, currentThrottle);
         float thrust = maxThrust * thrustMultiplier;
         
-        // 低速时推力减小
+        // 低速时保持最低推力（修复无法启动的问题）
         float speed = rb.velocity.magnitude;
-        if (speed < 50f)
-        {
-            thrust *= (speed / 50f);
-        }
+        float speedFactor = Mathf.Max(0.3f, speed / 50f); // 最低30%推力
+        thrust *= speedFactor;
         
         // 应用推力
         rb.AddForce(transform.forward * thrust);
